@@ -1,14 +1,12 @@
-# views.py
-
 
 from django.utils import timezone
-import requests
 from rest_framework.response import Response
 from rest_framework.views import APIView
-from django.core.mail import send_mail
+# from django.core.mail import send_mail
 from .models import UpdatedUser
 from django.core.mail import EmailMessage
-
+from django.contrib.auth.password_validation import validate_password
+from django.core.exceptions import ValidationError
 
 class SendOTPView(APIView):
     def post(self, request):
@@ -48,7 +46,6 @@ class VerifyOTPView(APIView):
             if timezone.now() > user.otp_expiry:
                 return Response({'error': 'OTP expired'}, status=400)
 
-            # You can now log the user in or return a token manually
             return Response({'success': 'OTP verified successfully'})
         except UpdatedUser.DoesNotExist:
             return Response({'error': 'User not found'}, status=404)
@@ -60,11 +57,12 @@ class SetNewPasswordView(APIView):
 
         try:
             user = UpdatedUser.objects.get(email=email)
-
-            # Optional: Ensure OTP was verified (you can track this using a flag or session)
             if timezone.now() > user.otp_expiry:
                 return Response({'error': 'OTP expired. Cannot set new password.'}, status=400)
-
+            try:
+                validate_password(new_password, user=user)
+            except ValidationError as e:
+                return Response({'error':e.messages} , status=400)
             user.set_password(new_password)
             user.otp = None
             user.otp_expiry = None
