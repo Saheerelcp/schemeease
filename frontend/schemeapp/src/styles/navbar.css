@@ -1,0 +1,21 @@
+.nav-hover {
+  color: white !important;
+  font-weight: 600;
+  font-size: 18px;
+  position: relative;
+}
+
+.nav-hover::after {
+  content: '';
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  height: 2px;
+  width: 0;
+  background-color: white;
+  transition: width 0.3s ease-in-out;
+}
+
+.nav-hover:hover::after {
+  width: 100%;
+}

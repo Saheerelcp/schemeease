@@ -59,7 +59,12 @@ SITE_ID = 1
 
 REST_FRAMEWORK = {
     'DEFAULT_AUTHENTICATION_CLASSES': [
+        'schemeapp.authentication.CustomJWTAuthentication',
         'rest_framework_simplejwt.authentication.JWTAuthentication',  
+
+    ],
+    'DEFAULT_PERMISSION_CLASSES': [
+        'rest_framework.permissions.IsAuthenticated',
     ],
 }
 
@@ -68,7 +73,9 @@ REST_AUTH = {
     'USE_JWT': True,  # This tells dj-rest-auth to use JWT
     'JWT_AUTH_COOKIE': 'access',
     'JWT_AUTH_REFRESH_COOKIE': 'refresh',
-    'SESSION_LOGIN': False,  # This disables Django session login
+    'SESSION_LOGIN': False, 
+    'ROTATE_REFRESH_TOKENS': False,
+    'BLACKLIST_AFTER_ROTATION': True, # This disables Django session login
 }
 
 
