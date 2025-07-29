@@ -20,7 +20,7 @@ function UserProfile() {
     const [formData, setFormData] = useState({
         fullname: '', dob: '', gender: '', phone: '', email: '',
         aadhar: '', pincode: '', address: '',
-        // rural: '', study: '', current: '', institute: '', 
+        rural: '', study: '',
         occupation: '',
         income: '', caste: '', disability: '', marital: ''
     });
@@ -42,22 +42,22 @@ function UserProfile() {
             .then((res) => {
                 const data = res.data;
                 if (data.profile && data.profile.fullname) {
-                setFormData(data.profile);
+                    setFormData(data.profile);
 
-                setSelectedState(data.state);
-                const districts = stateDistrictData[data.state] || [];
-                setDistrictOptions(districts);
+                    setSelectedState(data.state);
+                    const districts = stateDistrictData[data.state] || [];
+                    setDistrictOptions(districts);
 
-                setSelectedDistrict(data.district);
+                    setSelectedDistrict(data.district);
 
-                setComplete(data.profilecomplete); // This comes from backend
+                    setComplete(data.profilecomplete); // This comes from backend
 
-                // 🧠 If profile is already complete, make fields non-editable
-                setIsEditable(false);
-            } else {
-                // 🧠 No profile exists, editable form
-                setIsEditable(true);
-            }
+                    // 🧠 If profile is already complete, make fields non-editable
+                    setIsEditable(false);
+                } else {
+                    // 🧠 No profile exists, editable form
+                    setIsEditable(true);
+                }
             })
             .catch((error) => {
                 console.error("No existing profile", error);
@@ -65,30 +65,30 @@ function UserProfile() {
     }, []);
 
     const handleDelete = async () => {
-  try {
-    const res = await axiosInstance.delete('user-profile/', {
-      withCredentials: true,
-    });
-    toast.success(res.data || "Deleted");
-    setFormData({
-            fullname: '', dob: '', gender: '', phone: '', email: '',
-        aadhar: '', pincode: '', address: '',
-        // rural: '', study: '', current: '', institute: '', 
-        occupation: '',
-        income: '', caste: '', disability: '', marital: ''
-        });
+        try {
+            const res = await axiosInstance.delete('user-profile/', {
+                withCredentials: true,
+            });
+            toast.success(res.data || "Deleted");
+            setFormData({
+                fullname: '', dob: '', gender: '', phone: '', email: '',
+                aadhar: '', pincode: '', address: '',
+                rural: '', study: '',
+                occupation: '',
+                income: '', caste: '', disability: '', marital: ''
+            });
 
-        setSelectedState('');
-        setSelectedDistrict('');
-        setDistrictOptions([]);
-        setComplete(false);      
-        setIsEditable(true);     
-        setValidated(false); 
-  } catch (err) {
-    console.error('Something went wrong', err);
-    toast.error("Failed to delete profile");
-  }
-};
+            setSelectedState('');
+            setSelectedDistrict('');
+            setDistrictOptions([]);
+            setComplete(false);
+            setIsEditable(true);
+            setValidated(false);
+        } catch (err) {
+            console.error('Something went wrong', err);
+            toast.error("Failed to delete profile");
+        }
+    };
 
 
 
@@ -129,7 +129,6 @@ function UserProfile() {
     const handleUserProfile = async (e) => {
         e.preventDefault();
         const form = e.currentTarget;
-        console.log(formData.selectedState, 'from data')
         if (form.checkValidity() === false) {
             e.stopPropagation();
         } else {
@@ -141,7 +140,7 @@ function UserProfile() {
                     });
                 setIsEditable(false);
                 setComplete(true);
-                
+
 
                 toast.success(response.data, { position: 'top-right', autoClose: 2000 });
             } catch (error) {
@@ -176,8 +175,8 @@ function UserProfile() {
                         Edit
                     </Button>
                 }
-                { isComplete &&
-                 <Button
+                {isComplete &&
+                    <Button
                         variant="danger"
                         style={{
                             position: 'absolute',
@@ -185,9 +184,9 @@ function UserProfile() {
                             right: -40,
                             zIndex: 1,
                         }}
-                    onClick={handleDelete}
+                        onClick={handleDelete}
                     >
-                        <FaTrash size={20} color='white'/>
+                        <FaTrash size={20} color='white' />
                     </Button>
                 }
 
@@ -322,7 +321,7 @@ function UserProfile() {
 
 
 
-                        <Form.Group as={Col} md="4">
+                        <Form.Group as={Col} md="4" className='mt-3'>
                             <Form.Label>Pincode</Form.Label>
                             <Form.Control
                                 type="text"
@@ -335,6 +334,15 @@ function UserProfile() {
                             />
                             {msgpin && <small style={{ color: 'red' }}>{msgpin}</small>}
 
+                        </Form.Group>
+                        <Form.Group as={Col} md="4" className='mt-3'>
+                            <Form.Label>Living area</Form.Label>
+                            <Form.Select name="rural" value={formData.rural} onChange={handleChange} disabled={!isEditable} required>
+                                <option value=''>Select living area</option>
+                                <option value="rural">Rural</option>
+                                <option value="urban">Urban</option>
+                                <option value="semi-urban">Semi-Urban</option>
+                            </Form.Select>
                         </Form.Group>
                     </Row>
 
@@ -353,20 +361,55 @@ function UserProfile() {
 
                     {/* Additional Info */}
                     <h5 className='mt-4'>Other Information</h5>
+
                     <Row className='mb-3'>
-                        <Form.Group as={Col} md="4">
+                        <Form.Group as={Col} md="6" className='mt-3'>
+                            <Form.Label>Qualification</Form.Label>
+                            <Form.Select
+                                name="study"
+                                value={formData.study}
+                                onChange={handleChange}
+                                disabled={!isEditable}
+                                required
+                            >
+                                <option value="">Select your qualification</option>
+                                <option value="below_10">Below 10th</option>
+                                <option value="10">10th</option>
+                                <option value="12">12th</option>
+                                <option value="diploma">Diploma</option>
+                                <option value="ug">Undergraduate (UG)</option>
+                                <option value="pg">Postgraduate (PG)</option>
+                                <option value="phd">PhD / Doctorate</option>
+                                <option value="other">Other</option>
+                            </Form.Select>
+                        </Form.Group>
+
+
+                        <Form.Group as={Col} md="6" className="mt-3">
                             <Form.Label>Occupation</Form.Label>
-                            <Form.Control
-                                type="text"
+                            <Form.Select
                                 name="occupation"
                                 value={formData.occupation}
                                 onChange={handleChange}
-                                required
                                 disabled={!isEditable}
-                            />
+                                required
+                            >
+                                <option value="">Select occupation</option>
+                                <option value="student">Student</option>
+                                <option value="farmer">Farmer</option>
+                                <option value="teacher">Teacher</option>
+                                <option value="government_employee">Government Employee</option>
+                                <option value="private_employee">Private Sector Employee</option>
+                                <option value="business">Business</option>
+                                <option value="homemaker">Homemaker</option>
+                                <option value="unemployed">Unemployed</option>
+                                <option value="retired">Retired</option>
+                                <option value="other">Other</option>
+                            </Form.Select>
                         </Form.Group>
-
-                        <Form.Group as={Col} md="4">
+                    </Row>
+                        <Row>
+                        <Form.Group as={Col} md="6">
                             <Form.Label>Annual Income</Form.Label>
                             <Form.Control
                                 type="number"
@@ -378,7 +421,7 @@ function UserProfile() {
                             />
                         </Form.Group>
 
-                        <Form.Group as={Col} md="4">
+                        <Form.Group as={Col} md="6">
                             <Form.Label>Marital Status</Form.Label>
                             <Form.Select name="marital" value={formData.marital} onChange={handleChange} disabled={!isEditable} required>
                                 <option value=''>Select</option>
@@ -388,7 +431,7 @@ function UserProfile() {
                         </Form.Group>
                     </Row>
 
-                    <Row className='mb-3'>
+                    <Row className='mb-3 mt-3' >
                         <Form.Group as={Col} md="6">
                             <Form.Label>Caste Category</Form.Label>
                             <Form.Select

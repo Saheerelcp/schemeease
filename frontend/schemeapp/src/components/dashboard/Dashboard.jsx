@@ -3,7 +3,7 @@ import Row from 'react-bootstrap/Row';
 import Col from 'react-bootstrap/Col';
 import Form from 'react-bootstrap/Form';
 import Button from 'react-bootstrap/Button';
-import { Card } from 'react-bootstrap';
+import { Card ,Modal} from 'react-bootstrap';
 
 import {  FaSearch , FaLeaf, FaBook, FaStethoscope, FaTools, FaHome, FaArrowRight,FaUserEdit, FaClipboardCheck, FaRegBell } from 'react-icons/fa';
 import Carousel from 'react-bootstrap/Carousel';
@@ -18,6 +18,8 @@ import NavbarComponent from '../Navbar';
 import Footer from '../FooterComponent';
 function Dashboard() {
     const [user , setUser] = useState(0)
+    const [show,setShow] = useState(false)
+    const [isComplete,setComplete] = useState(true)
     const schemeCategories = [
   { name: 'Agriculture', icon: <FaLeaf size={40} />, total: 12 },
   { name: 'Education', icon: <FaBook size={40} />, total: 8 },
@@ -55,16 +57,40 @@ function Dashboard() {
         )
         .then(res => {
             setUser(res.data.usertotal);
-            
+            setComplete(res.data.profilecompletion);
         })
         .catch(err => {
             console.error("Something went wrong",err)
         })
     },[])
+      useEffect(() => {
+    const justRegistered = localStorage.getItem("justregistered");
+    
+    if (!isComplete && justRegistered === "true") {
+      setShow(true);
+      localStorage.removeItem("justregistered"); 
+    }
+  }, [isComplete]);
     return (
         <>
             <NavbarComponent/>
-            
+
+           <Modal show={show} onHide={() => setShow(false)} backdrop="static" centered>
+        <Modal.Header closeButton>
+          <Modal.Title>Complete Your Profile</Modal.Title>
+        </Modal.Header>
+        <Modal.Body>
+          Welcome! To access scheme eligibility and other features, please complete your profile.
+        </Modal.Body>
+        <Modal.Footer>
+          <Button variant="primary" onClick={() => {
+            setShow(false);
+            window.location.href = "/user-profile"; // Or use navigate("/user-profile")
+          }}>
+            Complete Now
+          </Button>
+        </Modal.Footer>
+      </Modal> 
     <Row>
          <Carousel data-bs-theme="dark" >
       <Carousel.Item >

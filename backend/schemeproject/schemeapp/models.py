@@ -36,5 +36,7 @@ class UserProfile(models.Model):
     caste = models.CharField(max_length=10,null=True)
     disability = models.CharField(max_length=10,null=True)
     is_profile_complete = models.BooleanField(default=False)
+    rural = models.CharField(max_length=15,null=True)
+    study = models.CharField(max_length=20,null=True)
 
 

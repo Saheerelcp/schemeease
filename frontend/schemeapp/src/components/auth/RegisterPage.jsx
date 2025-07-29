@@ -27,9 +27,10 @@ function RegisterPage() {
         position: 'top-right',
         autoClose: 2000,
       });
+      localStorage.setItem('justregistered','true')
 
       setTimeout(() => {
-        navigate('/');
+        navigate('/dashboard');
       }, 2000);
     } catch (error) {
       console.error(error);
@@ -122,7 +123,7 @@ function RegisterPage() {
 
             <div className="text-center mt-4">
               <span className="text-muted">Already have an account? </span>
-              <Link to="/dashboard" className="text-primary fw-semibold text-decoration-none">
+              <Link to="/" className="text-primary fw-semibold text-decoration-none">
                 Login here
               </Link>
             </div>
