@@ -39,4 +39,45 @@ class UserProfile(models.Model):
     rural = models.CharField(max_length=15,null=True)
     study = models.CharField(max_length=20,null=True)
 
+class Scheme(models.Model):
+    # Basic Info
+    
+    title = models.CharField(max_length=255,null=True)
+    description = models.TextField()
+    benefits = models.TextField()
+    # Eligibility Criteria
+    min_age = models.PositiveIntegerField(null=True, blank=True)
+    max_age = models.PositiveIntegerField(null=True, blank=True)
+    eligible_castes = models.CharField(max_length=255, blank=True, help_text="Comma-separated values: SC,ST,OBC,General")
+    income_limit = models.FloatField(null=True, blank=True, help_text="Annual income upper limit in INR")
+    gender = models.CharField(max_length=10, choices=[('Male', 'Male'), ('Female', 'Female'), ('Any', 'Any')], default='Any')
+    required_education = models.CharField(max_length=255, blank=True, help_text="e.g., 10th Pass, Graduate, ITI")
+    disability_required = models.BooleanField(default=False)
+    employment_status = models.CharField(
+        max_length=20,
+        choices=[('Employed', 'Employed'), ('Unemployed', 'Unemployed'),('Student', 'Student'), ('Any', 'Any')],
+        default='Any'
+    )
 
+    # Dates & Department
+    department = models.CharField(max_length=255, blank=True)
+    start_date = models.DateField()
+    end_date = models.DateField()
+
+    # Documents
+    required_documents = models.TextField(blank=True, help_text="List required documents, separated by commas")
+    attachment = models.FileField(upload_to='scheme_docs/', blank=True)
+
+    def __str__(self):
+        return self.title
+
+
+class EligibilityQuestion(models.Model):
+    scheme = models.ForeignKey(Scheme, on_delete=models.CASCADE, related_name="questions")
+    question_text = models.TextField()
+    expected_answer = models.CharField(max_length=20)  # e.g. "yes", "no"
+    field_name = models.CharField(max_length=50)  # optional, for matching answers
+    type = models.CharField(max_length=20, choices=[("boolean", "Yes/No"), ("text", "Text"), ("number", "Number")])
+    
+    def __str__(self):
+        return f"{self.scheme.title} - {self.question_text}"

@@ -6,7 +6,7 @@ import NavbarComponent from '../Navbar';
 import { Button, Col, Form, Row, Container, Alert } from 'react-bootstrap';
 import Footer from '../FooterComponent';
 import { useEffect } from 'react';
-import axiosInstance from '../AxiosInstance';
+import axios from 'axios';
 import { FaTrash } from 'react-icons/fa';
 
 const stateDistrictData = {
@@ -36,7 +36,7 @@ function UserProfile() {
 
 
     useEffect(() => {
-        axiosInstance.get('user-profile/', {
+        axios.get('http://localhost:8000/api/user-profile/', {
             withCredentials: true
         })
             .then((res) => {
@@ -66,7 +66,7 @@ function UserProfile() {
 
     const handleDelete = async () => {
         try {
-            const res = await axiosInstance.delete('user-profile/', {
+            const res = await axios.delete('http://localhost:8000/api/user-profile/', {
                 withCredentials: true,
             });
             toast.success(res.data || "Deleted");
@@ -133,7 +133,7 @@ function UserProfile() {
             e.stopPropagation();
         } else {
             try {
-                const response = await axiosInstance.post('user-profile/',
+                const response = await axios.post('http://localhost:8000/api/user-profile/',
                     { formData, selectedState, selectedDistrict },
                     {
                         withCredentials: true,

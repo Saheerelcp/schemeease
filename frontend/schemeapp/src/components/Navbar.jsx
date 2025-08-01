@@ -12,13 +12,13 @@ import Tooltip from 'react-bootstrap/Tooltip';
 
 import { FaUserCircle, FaBell, FaSearch } from 'react-icons/fa';
 import '../styles/navbar.css'; // Custom CSS for hover
-import axiosInstance from './AxiosInstance';
+import axios from 'axios';
 import { useState } from 'react';
 
 function NavbarComponent() {
   const [isComplete,setComplete] = useState(true)
   useEffect( () => {
-    axiosInstance.get('total-user/',
+    axios.get('http://localhost:8000/api/total-user/',
       {withCredentials:true},
     )
     .then((res) => {

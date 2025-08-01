@@ -9,6 +9,8 @@ import ChangePassword from './components/auth/ChangePassword';
 import SetNewPasswordPage from './components/auth/SetNewPassword';
 import Dashboard from './components/dashboard/Dashboard';
 import UserProfile from './components/profile/UserProfile';
+import SchemeList from './components/schemes/SchemeList';
+import ViewScheme from './components/schemes/ViewScheme';
 
 function App() {
   return (
@@ -21,6 +23,8 @@ function App() {
           <Route path='/confirm-password' element={<SetNewPasswordPage/>} />
           <Route path='/dashboard' element={<Dashboard/>} />
           <Route path='/user-profile' element={<UserProfile/>} />
+          <Route path='/scheme/:category' element={<SchemeList/>} />
+          <Route path='/view-scheme/:schemeId' element={<ViewScheme/>} />
       </Routes>
     </Router>
   )

@@ -110,7 +110,7 @@ from datetime import timedelta
 # settings.py
 
 SIMPLE_JWT = {
-    'ACCESS_TOKEN_LIFETIME': timedelta(minutes=15),
+    'ACCESS_TOKEN_LIFETIME': timedelta(hours=6),
     'REFRESH_TOKEN_LIFETIME': timedelta(days=1),
     'AUTH_COOKIE': 'access_token',  # Cookie name
     'AUTH_COOKIE_REFRESH': 'refresh_token',

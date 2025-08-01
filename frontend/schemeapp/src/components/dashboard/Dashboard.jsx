@@ -4,14 +4,14 @@ import Col from 'react-bootstrap/Col';
 import Form from 'react-bootstrap/Form';
 import Button from 'react-bootstrap/Button';
 import { Card ,Modal} from 'react-bootstrap';
-
+import { Link } from 'react-router-dom';
 import {  FaSearch , FaLeaf, FaBook, FaStethoscope, FaTools, FaHome, FaArrowRight,FaUserEdit, FaClipboardCheck, FaRegBell } from 'react-icons/fa';
 import Carousel from 'react-bootstrap/Carousel';
 import frame1 from '../../images/hand-holding-red-icon.jpg'
 import frame2 from '../../images/so-many-vegetables-this-field.jpg'
 import frame3 from '../../images/two-students-studying-together-online-with-laptop-park.jpg'
 import CountUp from 'react-countup';
-import axiosInstance from '../AxiosInstance';
+import axios from 'axios';
 
 import { useEffect, useState } from 'react';
 import NavbarComponent from '../Navbar';
@@ -19,15 +19,40 @@ import Footer from '../FooterComponent';
 function Dashboard() {
     const [user , setUser] = useState(0)
     const [show,setShow] = useState(false)
+    const [scheme,setScheme] = useState(0)
     const [isComplete,setComplete] = useState(true)
-    const schemeCategories = [
-  { name: 'Agriculture', icon: <FaLeaf size={40} />, total: 12 },
-  { name: 'Education', icon: <FaBook size={40} />, total: 8 },
-  { name: 'Healthcare', icon: <FaStethoscope size={40} />, total: 10 },
-  { name: 'Employment', icon: <FaTools size={40} />, total: 7 },
-  { name: 'Housing', icon: <FaHome size={40} />, total: 5 },
-  { name: 'Social Welfare', icon: <FaLeaf size={40} />, total: 9 }, // You can change icon
-];
+    const [schemeCategories,setSchemeCategories] = useState([])
+    
+  
+
+  useEffect(() => {
+    const iconMap = {
+  Agriculture: <FaLeaf size={40} />,
+  Education: <FaBook size={40} />,
+  Healthcare: <FaStethoscope size={40} />,
+  Employment: <FaTools size={40} />,
+  Housing: <FaHome size={40} />,
+  SocialWelfare: <FaLeaf size={40} />
+};
+    axios.get('http://localhost:8000/api/scheme-counts/',
+      {withCredentials:true}
+    )
+    .then(res => {
+      const backendData = res.data;
+      const mappedData = backendData.map(item => ({
+        name : item.department,
+        icon : iconMap[item.department] || <FaLeaf size={40} />,
+        total:item.count
+      }))
+      setSchemeCategories(mappedData)
+    })
+    .catch(err => {
+      console.error('error fetching category counts',err)
+    })
+    
+  }, [])
+
+
     const steps = [
   {
     icon: <FaUserEdit size={40} className="text-primary" />,
@@ -52,12 +77,13 @@ function Dashboard() {
 ];
 
     useEffect(()=> {
-        axiosInstance.get('total-user/',
+        axios.get('http://localhost:8000/api/total-user/',
           {withCredentials:true},
         )
         .then(res => {
             setUser(res.data.usertotal);
             setComplete(res.data.profilecompletion);
+            setScheme(res.data.totalscheme)
         })
         .catch(err => {
             console.error("Something went wrong",err)
@@ -155,7 +181,7 @@ function Dashboard() {
     <div className="text-center bg-light text-primary border rounded-3 px-4 py-3">
       <h5>Total Schemas</h5>
       <h2 className="display-6 fw-bolder">
-        <CountUp end={5000} duration={3} />
+        <CountUp end={scheme} duration={3} />
       </h2>
     </div>
   </Col>
@@ -180,9 +206,11 @@ function Dashboard() {
               <div className="mb-3 text-primary">{category.icon}</div>
               <Card.Title>{category.name}</Card.Title>
               <Card.Text className="text-muted">Total Schemes: {category.total}</Card.Text>
+              <Link to={`/scheme/${category.name}`}>
               <Button variant="outline-primary">
                 Explore <FaArrowRight className="ms-2" />
               </Button>
+              </Link>
             </Card.Body>
           </Card>
         </Col>

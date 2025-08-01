@@ -1,16 +1,20 @@
 
+from datetime import date
 from django.utils import timezone
 from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 # from django.core.mail import send_mail
+from django.db.models import Q
+import re
 from rest_framework import status
-
-from schemeapp.serializers import UserProfileDisplay
-from .models import UpdatedUser, UserProfile
+from django.db.models import Count
+from schemeapp.serializers import EligibilityQuestionSerializer, SchemeSerializer, UserProfileDisplay
+from .models import EligibilityQuestion, Scheme, UpdatedUser, UserProfile
 from django.core.mail import EmailMessage
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+
 
 class SendOTPView(APIView):
     def post(self, request):
@@ -84,12 +88,13 @@ class TotalUserCount(APIView):
         usercount = UpdatedUser.objects.count()
         user = request.user
         iscompleted=False
+        schemacount = Scheme.objects.count()
         try:
             profilecompletion = UserProfile.objects.get(userid = user)
             iscompleted = profilecompletion.is_profile_complete
         except UserProfile.DoesNotExist:
             pass
-        return Response({'usertotal':usercount,'profilecompletion':iscompleted})
+        return Response({'usertotal':usercount,'profilecompletion':iscompleted,'totalscheme':schemacount})
     
 class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
@@ -155,3 +160,150 @@ class UserProfileView(APIView):
             return Response('Profile deleted Sucessfully!')
         except Exception:
             return Response('There is no user profile to delete!')
+        
+class SchemeSpecific(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self,request):
+        counts = Scheme.objects.values('department').annotate(count = Count('id')).order_by('department')
+        return Response(list(counts))
+
+class SchemeList(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self,request):
+        department = request.GET.get('department')
+        queryset = Scheme.objects.filter(department = department)
+        #Search then how is it okay
+        search = request.GET.get('search')
+        if search:
+            queryset = queryset.filter(title__icontains=search)
+        
+        #filter
+        gender = request.GET.get('gender')
+        disability = request.GET.get('disability_required')
+        employment = request.GET.get('employment_status')
+        
+        eligible_castes = request.GET.get('eligible_castes')
+        income_limit = request.GET.get('income_limit')
+        required_education = request.GET.get('required_education')
+
+        if gender:
+            queryset = queryset.filter(gender__iexact=gender)
+        if disability:
+            queryset = queryset.filter(disability_required__iexact=disability)
+        if employment:
+            queryset = queryset.filter(employment_status__iexact=employment)
+        
+        if eligible_castes == "SCST":
+            queryset = queryset.filter( 
+                Q(eligible_castes__iregex=r'\bSC\b') | Q(eligible_castes__iregex=r'\bST\b')
+                )
+        elif eligible_castes:
+            queryset = queryset.filter(eligible_castes__iexact=eligible_castes)
+        if income_limit:
+            queryset = queryset.filter(income_limit__gte=income_limit)
+            print('querset',list(queryset))
+        if required_education:
+            queryset = queryset.filter(required_education__iexact = required_education) 
+
+        #sort
+        sort_order = request.GET.get('sort')
+        if sort_order == 'Z-A':
+            queryset = queryset.order_by('-title')
+        else:
+            queryset = queryset.order_by('title')
+        
+        serializer = SchemeSerializer(queryset, many=True)
+        return Response(serializer.data)
+        
+class ViewScheme(APIView):
+    permission_classes = [IsAuthenticated]
+    print('helooooooooooooooooooooooooooooooooo')
+    def get(self,request):
+        schemeId = request.GET.get('schemeId')
+        print('schemeId')
+        try:
+            scheme = Scheme.objects.get(id = schemeId)
+            serializer = SchemeSerializer(scheme)
+            return Response(serializer.data)
+        except Exception:
+            return Response('something went wrong')
+        
+class CheckEligibility(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self,request):
+        schemeId = request.GET.get('schemeId')
+        try:
+            scheme = Scheme.objects.get(id = schemeId)
+        except Scheme.DoesNotExist:
+            return Response({'error':'scheme not found'})
+        
+        user = request.user
+        profile = UserProfile.objects.get(userid = user)
+        basic_eligible = True
+        reasons = []
+        dob = profile.dob
+        today = date.today()
+        age = today.year - dob.year - ((today.month,today.day) <(dob.month , dob.day))
+        if scheme.min_age and age < scheme.min_age:
+            basic_eligible = False
+            reasons.append('Age is below minimum required.')
+        if scheme.max_age and age > scheme.max_age:
+            basic_eligible = False
+            reasons.append('Age exceeds maximum limit.')
+        if scheme.gender != "Any" and profile.gender != scheme.gender:
+            basic_eligible = False
+            reasons.append("Gender mismatch.")
+        if scheme.disability_required and not profile.is_disabled:
+            basic_eligible = False
+            reasons.append("Disability required.")
+        if scheme.required_education and profile.education != scheme.required_education:
+            basic_eligible = False
+            reasons.append("Required education mismatch.")
+        if scheme.employment_status != "Any" and profile.employment_status != scheme.employment_status:
+            basic_eligible = False
+            reasons.append("Employment status mismatch.")
+        if scheme.eligible_castes:
+            allowed_castes = [c.strip().lower() for c in scheme.eligible_castes.split(',')]
+            if profile.caste.lower() not in allowed_castes:
+                basic_eligible = False
+                reasons.append("Caste not eligible.")
+        if scheme.income_limit and profile.income > scheme.income_limit:
+            basic_eligible = False
+            reasons.append("Income exceeds limit.")
+        
+        questions = EligibilityQuestion.objects.filter(scheme=schemeId)
+        question_serializer = EligibilityQuestionSerializer(questions,many=True)
+
+        return Response({
+            'basic_eligibility' : basic_eligible,
+            'reasons' :reasons,
+            'questions':question_serializer.data
+        })
+    
+    def post(self,request):
+        schemeId = request.GET.get('schemeId')
+        questions = EligibilityQuestion.objects.filter(scheme = schemeId)
+        user_answers = request.data.get('answers',{})
+
+        wrong_answers = []
+        for i in questions:
+            answer = user_answers.get(i.field_name or str(i.id))
+            if answer is None:
+                wrong_answers.append({
+                    'questions':i.question_text,
+                    'error':'no answer provided'
+                })
+                continue
+            if str(answer).strip().lower() != str(i.expected_answer).strip().lower():
+                wrong_answers.append({
+                    "question": i.question_text,
+                    "expected": i.expected_answer,
+                    "got": answer
+                })
+        passed = len(wrong_answers) == 0
+        return Response({
+            'all_answers_correct' : passed,
+            'wrong_answers':wrong_answers
+        })
+        
+
