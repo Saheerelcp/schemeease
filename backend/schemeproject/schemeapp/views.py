@@ -256,10 +256,10 @@ class CheckEligibility(APIView):
         if scheme.disability_required and not profile.is_disabled:
             basic_eligible = False
             reasons.append("Disability required.")
-        if scheme.required_education and profile.education != scheme.required_education:
+        if scheme.required_education and profile.study != scheme.required_education:
             basic_eligible = False
             reasons.append("Required education mismatch.")
-        if scheme.employment_status != "Any" and profile.employment_status != scheme.employment_status:
+        if scheme.employment_status != "Any" and profile.occupation != scheme.employment_status:
             basic_eligible = False
             reasons.append("Employment status mismatch.")
         if scheme.eligible_castes:

@@ -38,7 +38,8 @@ const ViewScheme = () => {
           axios.get(`http://localhost:8000/api/user-profile`, { withCredentials: true })
         ]);
 
-        setProfileComplete(profileRes.data.profilecompletion);
+        setProfileComplete(profileRes.data.profilecomplete);
+        console.log(profileRes.data.profilecomplete,'heloooooooooooooooo')
         setScheme(schemeRes.data);
       } catch (error) {
         console.error("Error fetching data:", error);
@@ -47,7 +48,7 @@ const ViewScheme = () => {
 
     fetchData();
   }, [schemeId]);
-  console.log(scheme,'hello working')
+  console.log(profileComplete,'hello working')
   const handleBookmark = () => {
     setBookmarked(!bookmarked);
     // TODO: Save bookmark state via API
@@ -69,7 +70,7 @@ const ViewScheme = () => {
     }
 
     try {
-      const res = await axios.get(`http://localhost:8000/api/check-eligibility/${schemeId}`, {
+      const res = await axios.get(`http://localhost:8000/api/check-eligibility/?schemeId=${schemeId}`, {
         withCredentials: true,
       });
 
@@ -83,7 +84,7 @@ const ViewScheme = () => {
 
   const handleSubmitAnswers = async () => {
     try {
-      const res = await axios.post(`http://localhost:8000/api/check-eligibility/${schemeId}`, {
+      const res = await axios.post(`http://localhost:8000/api/check-eligibility/?schemeId=${schemeId}`, {
         answers: userAnswers
       }, { withCredentials: true });
 
@@ -148,11 +149,7 @@ const ViewScheme = () => {
 
       <hr />
 
-      {showAlert && (
-        <Alert variant="danger" onClose={() => setShowAlert(false)} dismissible>
-          Please complete your profile to check eligibility!
-        </Alert>
-      )}
+      
 
       {/* Sections */}
       <div ref={sectionsRef.details} className="mb-5">
@@ -187,6 +184,11 @@ const ViewScheme = () => {
       </div>
 
       <div ref={sectionsRef.check} className="mb-5">
+        {showAlert && (
+        <Alert variant="danger" onClose={() => setShowAlert(false)} dismissible>
+          Please complete your profile to check eligibility!
+        </Alert>
+      )}
         <h5>Check Eligibility</h5>
         <Button variant="primary" className="mb-3" onClick={handleEligibilityCheck}>
           Check Eligibility

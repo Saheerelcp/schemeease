@@ -11,5 +11,5 @@ urlpatterns = [
     path('scheme-counts/',SchemeSpecific.as_view()),
     path('schemes/',SchemeList.as_view()),
     path('scheme-view/',ViewScheme.as_view()),
-    path('check-eligibility',CheckEligibility.as_view()),
+    path('check-eligibility/',CheckEligibility.as_view()),
 ]
