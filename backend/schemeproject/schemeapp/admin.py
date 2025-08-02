@@ -30,7 +30,7 @@ class SchemeAdmin(admin.ModelAdmin):
     list_display = ("title", "department", "gender", "min_age", "max_age",
                     "income_limit", "start_date", "end_date")
     search_fields = ("title", "department", "description", "required_education", "eligible_castes")
-    list_filter = ("department", "gender", "employment_status", "disability_required", ActiveNowFilter, "start_date")
+    list_filter = ("department", "gender", "occupation", "disability_required", ActiveNowFilter, "start_date")
     date_hierarchy = "start_date"
     ordering = ("-start_date",)
     list_per_page = 25

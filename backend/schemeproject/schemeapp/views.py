@@ -180,8 +180,7 @@ class SchemeList(APIView):
         #filter
         gender = request.GET.get('gender')
         disability = request.GET.get('disability_required')
-        employment = request.GET.get('employment_status')
-        
+        employment = request.GET.get('occupation')
         eligible_castes = request.GET.get('eligible_castes')
         income_limit = request.GET.get('income_limit')
         required_education = request.GET.get('required_education')
@@ -191,7 +190,7 @@ class SchemeList(APIView):
         if disability:
             queryset = queryset.filter(disability_required__iexact=disability)
         if employment:
-            queryset = queryset.filter(employment_status__iexact=employment)
+            queryset = queryset.filter(occupation__iexact=employment)
         
         if eligible_castes == "SCST":
             queryset = queryset.filter( 
@@ -217,10 +216,8 @@ class SchemeList(APIView):
         
 class ViewScheme(APIView):
     permission_classes = [IsAuthenticated]
-    print('helooooooooooooooooooooooooooooooooo')
     def get(self,request):
         schemeId = request.GET.get('schemeId')
-        print('schemeId')
         try:
             scheme = Scheme.objects.get(id = schemeId)
             serializer = SchemeSerializer(scheme)
@@ -253,15 +250,15 @@ class CheckEligibility(APIView):
         if scheme.gender != "Any" and profile.gender != scheme.gender:
             basic_eligible = False
             reasons.append("Gender mismatch.")
-        if scheme.disability_required and not profile.disability:
+        if scheme.disability_required !="Any" and  profile.disability != scheme.disability_required:
             basic_eligible = False
             reasons.append("Disability required.")
-        if scheme.required_education !="Any" and profile.study != scheme.required_education:
+        if scheme.required_education !="any" and profile.study != scheme.required_education:
             basic_eligible = False
             reasons.append("Required education mismatch.")
-        if scheme.employment_status != "Any" and (profile.occupation).lower() != (scheme.employment_status).lower():
+        if scheme.occupation != "any" and (profile.occupation).lower() != (scheme.occupation).lower():
             basic_eligible = False
-            reasons.append("Employment status mismatch.")
+            reasons.append("Occupation mismatch.")
         if scheme.eligible_castes:
             allowed_castes = [c.strip().lower() for c in scheme.eligible_castes.split(',')]
             if profile.caste.lower() not in allowed_castes:

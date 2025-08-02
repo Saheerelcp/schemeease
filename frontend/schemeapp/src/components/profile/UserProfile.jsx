@@ -451,7 +451,7 @@ function UserProfile() {
                         </Form.Group>
 
                         <Form.Group as={Col} md="6">
-                            <Form.Label>Disability (if any)</Form.Label>
+                            <Form.Label>Disability</Form.Label>
                             <Form.Select
                                 name="disability"
                                 value={formData.disability}
@@ -461,11 +461,7 @@ function UserProfile() {
                             >
                                 <option value="">Select Disability Status</option>
                                 <option value="None">None</option>
-                                <option value="Visual Impairment">Visual Impairment</option>
-                                <option value="Hearing Impairment">Hearing Impairment</option>
-                                <option value="Locomotor Disability">Locomotor Disability</option>
-                                <option value="Mental Illness">Mental Illness</option>
-                                <option value="Other">Other</option>
+                                <option value="Yes">Yes</option>
                             </Form.Select>
                         </Form.Group>
 

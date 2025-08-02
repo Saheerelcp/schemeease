@@ -42,13 +42,13 @@ class UserProfile(models.Model):
 class Scheme(models.Model):
     # Basic Info
     
-    title = models.CharField(max_length=255,null=True)
+    title = models.CharField(max_length=255)
     description = models.TextField()
     benefits = models.TextField()
     # Eligibility Criteria
     min_age = models.PositiveIntegerField(null=True, blank=True)
     max_age = models.PositiveIntegerField(null=True, blank=True)
-    eligible_castes = models.CharField(max_length=255, blank=True, help_text="Comma-separated values: SC,ST,OBC,General")
+    eligible_castes = models.CharField(max_length=255, blank=True, choices=[('Any','Any'),('SC,ST','SCST'),('OBC','OBC'),('General','General')] ,default='Any')
     income_limit = models.FloatField(null=True, blank=True, help_text="Annual income upper limit in INR")
     gender = models.CharField(max_length=10, choices=[('Male', 'Male'), ('Female', 'Female'), ('Any', 'Any')], default='Any')
     EDUCATION_CHOICES = [
@@ -70,15 +70,38 @@ class Scheme(models.Model):
         blank=True,
         help_text="Select the minimum educational qualification required"
     )
-    disability_required = models.BooleanField(default=False)
-    employment_status = models.CharField(
-        max_length=20,
-        choices=[('Employed', 'Employed'), ('Unemployed', 'Unemployed'),('Student', 'Student'), ('Any', 'Any')],
-        default='Any'
+    disability_required = models.CharField(max_length=30,choices=[('Any','Any'),('Yes','Yes'),('None','None')],default='None')
+    EMPLOYMENT_CHOICES = [
+    ('student', 'Student'),
+    ('farmer', 'Farmer'),
+    ('teacher', 'Teacher'),
+    ('government_employee', 'Government Employee'),
+    ('private_employee', 'Private Sector Employee'),
+    ('business', 'Business'),
+    ('homemaker', 'Homemaker'),
+    ('unemployed', 'Unemployed'),
+    ('retired', 'Retired'),
+    ('other', 'Other'),
+    ('any', 'Any'),  # optional fallback
+    ]
+
+    occupation = models.CharField(
+        max_length=30,
+        choices=EMPLOYMENT_CHOICES,
+        default='any',
+        blank=True,
+        help_text="Select your employment or occupation status"
     )
 
     # Dates & Department
-    department = models.CharField(max_length=255, blank=True)
+    department = models.CharField(max_length=200,choices=[
+            ('Agriculture', 'Agriculture'),
+            ('Education', 'Education'),
+            ('Healthcare', 'Healthcare'),
+            ('Employment', 'Employment'),
+            ('Housing', 'Housing'),
+            ('Social Welfare', 'Social Welfare'),
+        ])
     start_date = models.DateField()
     end_date = models.DateField()
 

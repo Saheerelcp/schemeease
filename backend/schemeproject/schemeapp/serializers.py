@@ -11,7 +11,7 @@ class UserProfileDisplay(serializers.ModelSerializer):
 
 class SchemeSerializer(serializers.ModelSerializer):
     required_education = serializers.CharField(source='get_required_education_display', read_only=True)
-
+    occupation = serializers.CharField(source = 'get_occupation_display' , read_only = True)
     class Meta:
         model = Scheme
         fields = '__all__'
