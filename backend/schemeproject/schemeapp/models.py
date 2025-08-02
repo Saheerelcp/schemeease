@@ -51,7 +51,25 @@ class Scheme(models.Model):
     eligible_castes = models.CharField(max_length=255, blank=True, help_text="Comma-separated values: SC,ST,OBC,General")
     income_limit = models.FloatField(null=True, blank=True, help_text="Annual income upper limit in INR")
     gender = models.CharField(max_length=10, choices=[('Male', 'Male'), ('Female', 'Female'), ('Any', 'Any')], default='Any')
-    required_education = models.CharField(max_length=255, blank=True, help_text="e.g., 10th Pass, Graduate, ITI")
+    EDUCATION_CHOICES = [
+        ('any', 'Any'),
+        ('below_10', 'Below 10th'),
+        ('10', '10th'),
+        ('12', '12th'),
+        ('diploma', 'Diploma'),
+        ('ug', 'Undergraduate (UG)'),
+        ('pg', 'Postgraduate (PG)'),
+        ('phd', 'PhD / Doctorate'),
+        ('other', 'Other'),
+    ]
+
+    required_education = models.CharField(
+        max_length=20,
+        choices=EDUCATION_CHOICES,
+        default='any',
+        blank=True,
+        help_text="Select the minimum educational qualification required"
+    )
     disability_required = models.BooleanField(default=False)
     employment_status = models.CharField(
         max_length=20,

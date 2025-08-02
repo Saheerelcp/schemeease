@@ -253,13 +253,13 @@ class CheckEligibility(APIView):
         if scheme.gender != "Any" and profile.gender != scheme.gender:
             basic_eligible = False
             reasons.append("Gender mismatch.")
-        if scheme.disability_required and not profile.is_disabled:
+        if scheme.disability_required and not profile.disability:
             basic_eligible = False
             reasons.append("Disability required.")
-        if scheme.required_education and profile.study != scheme.required_education:
+        if scheme.required_education !="Any" and profile.study != scheme.required_education:
             basic_eligible = False
             reasons.append("Required education mismatch.")
-        if scheme.employment_status != "Any" and profile.occupation != scheme.employment_status:
+        if scheme.employment_status != "Any" and (profile.occupation).lower() != (scheme.employment_status).lower():
             basic_eligible = False
             reasons.append("Employment status mismatch.")
         if scheme.eligible_castes:
@@ -273,7 +273,7 @@ class CheckEligibility(APIView):
         
         questions = EligibilityQuestion.objects.filter(scheme=schemeId)
         question_serializer = EligibilityQuestionSerializer(questions,many=True)
-
+        print(basic_eligible,'coolieeeeeeeeeeeeee')
         return Response({
             'basic_eligibility' : basic_eligible,
             'reasons' :reasons,

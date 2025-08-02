@@ -1,6 +1,6 @@
 import React, { useState, useEffect,useRef } from 'react';
 import {
-  Container, Row, Col, Tab, Nav, Button, Form, Alert
+  Container, Row, Col, Tab, Nav, Button, Form, Alert , Modal
 } from 'react-bootstrap';
 import { FaRegBookmark, FaBookmark } from 'react-icons/fa';
 import { BsStar, BsStarFill } from 'react-icons/bs';
@@ -19,8 +19,11 @@ const ViewScheme = () => {
   const [showAlert, setShowAlert] = useState(false);
   const [scheme, setScheme] = useState({});
   const [rating, setRating] = useState(0);
+  const [reasons,setReasons] = useState('')
 
   const [eligibilityQuestions, setEligibilityQuestions] = useState([]);
+  const [showResultModal, setShowResultModal] = useState(false);
+
   const [userAnswers, setUserAnswers] = useState({});
    const sectionsRef = {
     details: useRef(null),
@@ -76,12 +79,14 @@ const ViewScheme = () => {
 
       setEligible(res.data.basic_eligibility);
       setEligibilityQuestions(res.data.questions);
-      setShowEligibilityQuestions(true);
+      setShowEligibilityQuestions(res.data.basic_eligibility);
+      setReasons(res.data.reasons)
     } catch (error) {
       console.error("Eligibility check failed:", error);
     }
   };
 
+  console.log(showEligibilityQuestions,'coolieeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee')
   const handleSubmitAnswers = async () => {
     try {
       const res = await axios.post(`http://localhost:8000/api/check-eligibility/?schemeId=${schemeId}`, {
@@ -89,6 +94,7 @@ const ViewScheme = () => {
       }, { withCredentials: true });
 
       setAllAnswersCorrect(res.data.all_answers_correct);
+      setShowResultModal(true);
     } catch (error) {
       console.error("Answer submission failed:", error);
     }
@@ -159,7 +165,7 @@ const ViewScheme = () => {
 
       <div ref={sectionsRef.benefits} className="mb-5">
         <h5>Benefits</h5>
-        <pre>{scheme.benefits}</pre>
+        <p>{scheme.benefits}</p>
       </div>
 
       <div ref={sectionsRef.eligibility} className="mb-5">
@@ -195,15 +201,29 @@ const ViewScheme = () => {
         </Button>
 
         {eligible && (
+            <>
           <Form.Check
             type="checkbox"
             label="You meet the basic eligibility criteria"
             checked
             readOnly
           />
+          
+          </>
         )}
+       {reasons.length > 0 && (
+  <div className="alert alert-danger" role="alert">
+    <strong>You are not eligible to apply.</strong><br />
+    Your profile details do not match the scheme's eligibility criteria:
+    <ul className="mb-0 mt-2">
+      {reasons.map((reason, index) => (
+        <li key={index}>{reason}</li>
+      ))}
+    </ul>
+  </div>
+)}
 
-        {showEligibilityQuestions && (
+        {showEligibilityQuestions  &&(
           <div className="mt-3">
             <h6>Answer these questions:</h6>
             {eligibilityQuestions.map((q, idx) => (
@@ -220,12 +240,38 @@ const ViewScheme = () => {
               Submit Answers
             </Button>
 
-            <Button variant="success" disabled={!allAnswersCorrect}>
+            {/* <Button variant="success" disabled={!allAnswersCorrect}>
               Apply
-            </Button>
+            </Button> */}
           </div>
         )}
       </div>
+        <Modal show={showResultModal} onHide={() => setShowResultModal(false)} centered>
+  <Modal.Header closeButton>
+    <Modal.Title>{allAnswersCorrect ? "Congratulations!" : "Not Eligible"}</Modal.Title>
+  </Modal.Header>
+  <Modal.Body>
+    {allAnswersCorrect ? (
+      <p>You are eligible for this scheme. You may now apply.</p>
+    ) : (
+      <p>Sorry, based on your answers you are not eligible.</p>
+    )}
+  </Modal.Body>
+  <Modal.Footer>
+    {allAnswersCorrect ? (
+      <Button variant="success" onClick={() => {
+        // You can trigger apply action here or redirect
+        setShowResultModal(false);
+      }}>
+        Apply
+      </Button>
+    ) : (
+      <Button variant="secondary" onClick={() => setShowResultModal(false)}>
+        Close
+      </Button>
+    )}
+  </Modal.Footer>
+</Modal>
 
       <div ref={sectionsRef.feedback} className="mb-5">
         <h5>Rate this Scheme</h5>
