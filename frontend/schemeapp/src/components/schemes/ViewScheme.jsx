@@ -8,6 +8,9 @@ import axios from 'axios';
 import { useParams } from 'react-router-dom';
 import NavbarComponent from '../Navbar';
 import Footer from '../FooterComponent';
+import OverlayTrigger from 'react-bootstrap/OverlayTrigger';
+import Tooltip from 'react-bootstrap/Tooltip';
+
 
 const ViewScheme = () => {
     const { schemeId } = useParams();
@@ -30,21 +33,22 @@ const ViewScheme = () => {
         benefits: useRef(null),
         eligibility: useRef(null),
         documents: useRef(null),
-        attachment: useRef(null),
         check: useRef(null),
         feedback: useRef(null),
     };
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const [schemeRes, profileRes] = await Promise.all([
+                const [schemeRes, profileRes, bookmark] = await Promise.all([
                     axios.get(`http://localhost:8000/api/scheme-view/?schemeId=${schemeId}`, { withCredentials: true }),
-                    axios.get(`http://localhost:8000/api/user-profile`, { withCredentials: true })
+                    axios.get(`http://localhost:8000/api/user-profile`, { withCredentials: true }),
+                    axios.get(`http://localhost:8000/api/bookmarked/?schemeId=${schemeId}`, { withCredentials: true })
                 ]);
 
                 setProfileComplete(profileRes.data.profilecomplete);
                 console.log(profileRes.data.profilecomplete, 'heloooooooooooooooo')
                 setScheme(schemeRes.data);
+                setBookmarked(bookmark.data.is_bookmarked);
             } catch (error) {
                 console.error("Error fetching data:", error);
             }
@@ -52,11 +56,23 @@ const ViewScheme = () => {
 
         fetchData();
     }, [schemeId]);
-    console.log(profileComplete, 'hello working')
-    const handleBookmark = () => {
-        setBookmarked(!bookmarked);
-        // TODO: Save bookmark state via API
-    };
+    const handleBookmark = async () => {
+    try {
+        const newBookmarkState = !bookmarked; // Toggle value before sending
+          axios.post(
+            `http://localhost:8000/api/bookmarked/?schemeId=${schemeId}`,
+            { is_bookmarked: newBookmarkState },
+            { withCredentials: true }
+        );
+
+        
+
+        setBookmarked(newBookmarkState); // Update UI state to match backend
+    } catch (err) {
+        console.error('Bookmark toggle failed', err);
+    }
+};
+
 
     const handleRating = (index) => {
         setRating(index);
@@ -72,9 +88,9 @@ const ViewScheme = () => {
         }
 
         try {
-            const res = await axios.get(`http://localhost:8000/api/check-eligibility/?schemeId=${schemeId}`, {
-                withCredentials: true,
-            });
+            const res = await axios.get(`http://localhost:8000/api/check-eligibility/?schemeId=${schemeId}`,
+
+                { withCredentials: true });
 
             setEligible(res.data.basic_eligibility);
             setEligibilityQuestions(res.data.questions);
@@ -109,7 +125,11 @@ const ViewScheme = () => {
         }
     };
 
-
+    const renderTooltip = (props) => (
+        <Tooltip id="button-tooltip" {...props}>
+            {bookmarked ? 'Bookmarked':'Bookmark'}
+        </Tooltip>
+    );
     return (
         <>
             <NavbarComponent />
@@ -146,9 +166,16 @@ const ViewScheme = () => {
                     <Col xs={12} md={10}>
                         <div className="d-flex justify-content-between align-items-start">
                             <h3 className='text-primary'>{scheme.title}</h3>
-                            <Button variant="outline-success" onClick={handleBookmark} size="sm" className="rounded-circle">
-                                {bookmarked ? <FaBookmark /> : <FaRegBookmark />}
-                            </Button>
+                            <OverlayTrigger
+                                placement="right"
+                                delay={{ show: 250, hide: 400 }}
+                                overlay={renderTooltip}
+                            >
+                                <Button variant="outline-success" onClick={handleBookmark} size="sm" className="rounded-circle">
+                                    {bookmarked ? <FaBookmark /> : <FaRegBookmark />}
+                                </Button>
+                            </OverlayTrigger>
+
                         </div>
 
                         <hr />
@@ -187,7 +214,7 @@ const ViewScheme = () => {
                             </ul>
                         </div>
 
-                        {scheme.attachment && <div ref={sectionsRef.attachment} className='mb-5'>
+                        {scheme.attachment && <div className='mb-5'>
                             <a
                                 href={`http://localhost:8000${scheme.attachment}`}
                                 download

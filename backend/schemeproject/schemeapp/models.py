@@ -122,3 +122,9 @@ class EligibilityQuestion(models.Model):
     
     def __str__(self):
         return f"{self.scheme.title} - {self.question_text}"
+
+class Bookmark(models.Model):
+    user = models.ForeignKey(UpdatedUser ,on_delete=models.CASCADE, related_name='bookmarked')
+    scheme = models.ForeignKey(Scheme ,on_delete=models.CASCADE,related_name='scheme')
+    is_bookmarked = models.BooleanField(default=False)
+    

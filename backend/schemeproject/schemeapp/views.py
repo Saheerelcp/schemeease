@@ -9,8 +9,8 @@ from django.db.models import Q
 import re
 from rest_framework import status
 from django.db.models import Count
-from schemeapp.serializers import EligibilityQuestionSerializer, SchemeSerializer, UserProfileDisplay
-from .models import EligibilityQuestion, Scheme, UpdatedUser, UserProfile
+from schemeapp.serializers import  BookmarkedSerializer, EligibilityQuestionSerializer, SchemeSerializer, UserProfileDisplay
+from .models import Bookmark, EligibilityQuestion, Scheme, UpdatedUser, UserProfile
 from django.core.mail import EmailMessage
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
@@ -304,4 +304,35 @@ class CheckEligibility(APIView):
             'wrong_answers':wrong_answers
         })
         
-
+class Bookmarksetup(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self,request):
+        user = request.user
+        schemeId = request.GET.get('schemeId')
+        try:
+            scheme = Scheme.objects.get(id = schemeId)
+            print(user,'helii')
+            serializer = BookmarkedSerializer(data=request.data)
+            print('kuttistory')
+            if serializer.is_valid():
+                is_bookmarked = serializer.validated_data.get('is_bookmarked', True)
+                Bookmark.objects.update_or_create(user=user,scheme=scheme,defaults={'is_bookmarked': is_bookmarked})
+                return Response({'msg':'Bookmarked'})
+            print(serializer.errors)
+            return Response(serializer.errors)
+        except Exception:
+            return Response('Something went wrong')
+    def get(self,request):
+        user = request.user
+        scheme = request.GET.get("schemeId")
+        try:
+            bookmark = Bookmark.objects.get(user=user,scheme = scheme)
+            if bookmark:
+                return Response({'is_bookmarked':bookmark.is_bookmarked})
+            else:
+                return Response({'is_bookmarked':False})
+            
+        except Exception:
+            return Response('something went wrong')
+        
+        

@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from schemeapp.models import EligibilityQuestion, Scheme, UserProfile
+from schemeapp.models import Bookmark, EligibilityQuestion, Scheme, UserProfile
 
 
 
@@ -23,3 +23,8 @@ class EligibilityQuestionSerializer(serializers.ModelSerializer):
     class Meta:
         model = EligibilityQuestion
         fields = ['id','question_text','type','field_name']
+
+class BookmarkedSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Bookmark
+        fields = ['is_bookmarked']
