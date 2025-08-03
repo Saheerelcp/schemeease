@@ -251,6 +251,7 @@ class CheckEligibility(APIView):
             basic_eligible = False
             reasons.append("Gender mismatch.")
         if scheme.disability_required !="Any" and  profile.disability != scheme.disability_required:
+            print('schemedisability',scheme.disability_required)
             basic_eligible = False
             reasons.append("Disability required.")
         if scheme.required_education !="any" and profile.study != scheme.required_education:

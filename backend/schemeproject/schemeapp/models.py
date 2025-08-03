@@ -48,7 +48,7 @@ class Scheme(models.Model):
     # Eligibility Criteria
     min_age = models.PositiveIntegerField(null=True, blank=True)
     max_age = models.PositiveIntegerField(null=True, blank=True)
-    eligible_castes = models.CharField(max_length=255, blank=True, choices=[('Any','Any'),('SC,ST','SCST'),('OBC','OBC'),('General','General')] ,default='Any')
+    eligible_castes = models.CharField(max_length=255, blank=True, choices=[('Any','Any'),('SC,ST','SCST'),('OBC','OBC'),('General','General'),('EWS','EWS')] ,default='Any')
     income_limit = models.FloatField(null=True, blank=True, help_text="Annual income upper limit in INR")
     gender = models.CharField(max_length=10, choices=[('Male', 'Male'), ('Female', 'Female'), ('Any', 'Any')], default='Any')
     EDUCATION_CHOICES = [
@@ -70,7 +70,7 @@ class Scheme(models.Model):
         blank=True,
         help_text="Select the minimum educational qualification required"
     )
-    disability_required = models.CharField(max_length=30,choices=[('Any','Any'),('Yes','Yes'),('None','None')],default='None')
+    disability_required = models.CharField(max_length=30,choices=[('Any','Any'),('Yes','Yes'),('None','None')],default='Any')
     EMPLOYMENT_CHOICES = [
     ('student', 'Student'),
     ('farmer', 'Farmer'),
