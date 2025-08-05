@@ -106,7 +106,6 @@ class Scheme(models.Model):
     end_date = models.DateField()
 
     # Documents
-    required_documents = models.TextField(blank=True, help_text="List required documents, separated by commas")
     attachment = models.FileField(upload_to='scheme_docs/', blank=True)
 
     def __str__(self):
@@ -128,3 +127,18 @@ class Bookmark(models.Model):
     scheme = models.ForeignKey(Scheme ,on_delete=models.CASCADE,related_name='scheme')
     is_bookmarked = models.BooleanField(default=False)
     
+class Rating(models.Model):
+    user = models.ForeignKey(UpdatedUser , on_delete=models.CASCADE,related_name='user')
+    scheme = models.ForeignKey(Scheme,models.CASCADE,related_name='ratedscheme')
+    rating = models.IntegerField()
+
+class States(models.Model):
+    name = models.CharField(max_length=100)
+
+class Districts(models.Model):
+    state = models.ForeignKey(States,on_delete=models.CASCADE)
+    district = models.CharField(max_length=100)
+
+class RequiredDocuments(models.Model):
+    scheme = models.ForeignKey(Scheme,on_delete=models.CASCADE,related_name='required_documents')
+    name = models.CharField(max_length=100,help_text="List required documents, separated by commas")

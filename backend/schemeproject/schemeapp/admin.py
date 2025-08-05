@@ -1,7 +1,7 @@
 from django.utils import timezone
 from django.contrib import admin
 
-from schemeapp.models import EligibilityQuestion, Scheme
+from schemeapp.models import Districts, EligibilityQuestion, RequiredDocuments, Scheme, States
 
 # Register your models here.
 class ActiveNowFilter(admin.SimpleListFilter):
@@ -24,9 +24,13 @@ class EligibilityQuestionInline(admin.TabularInline):
     model = EligibilityQuestion
     extra = 1
     
+class RequiredDocumentsInline(admin.TabularInline):
+    model = RequiredDocuments
+    extra = 1
+
 @admin.register(Scheme)
 class SchemeAdmin(admin.ModelAdmin):
-    inlines = [EligibilityQuestionInline]
+    inlines = [EligibilityQuestionInline,RequiredDocumentsInline]
     list_display = ("title", "department", "gender", "min_age", "max_age",
                     "income_limit", "start_date", "end_date")
     search_fields = ("title", "department", "description", "required_education", "eligible_castes")
@@ -35,3 +39,5 @@ class SchemeAdmin(admin.ModelAdmin):
     ordering = ("-start_date",)
     list_per_page = 25
 
+admin.site.register(States)
+admin.site.register(Districts)

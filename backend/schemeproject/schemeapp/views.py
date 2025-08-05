@@ -6,11 +6,11 @@ from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 # from django.core.mail import send_mail
 from django.db.models import Q
-import re
+from django.db.models import Avg
 from rest_framework import status
 from django.db.models import Count
-from schemeapp.serializers import  BookmarkedSerializer, EligibilityQuestionSerializer, SchemeSerializer, UserProfileDisplay
-from .models import Bookmark, EligibilityQuestion, Scheme, UpdatedUser, UserProfile
+from schemeapp.serializers import  BookmarkedSerializer, DistrictSerializer, EligibilityQuestionSerializer, FeedbackSerializer, SchemeSerializer, StateSerializer, UserProfileDisplay
+from .models import Bookmark, Districts, EligibilityQuestion, Rating, RequiredDocuments, Scheme, States, UpdatedUser, UserProfile
 from django.core.mail import EmailMessage
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
@@ -95,7 +95,26 @@ class TotalUserCount(APIView):
         except UserProfile.DoesNotExist:
             pass
         return Response({'usertotal':usercount,'profilecompletion':iscompleted,'totalscheme':schemacount})
-    
+class StateCall(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self,request):
+        try:
+            state = States.objects.all()
+            serializer = StateSerializer(state,many=True)
+            return Response(serializer.data)
+        except Exception:
+            return Response('something went wrong')
+
+class DistirctCall(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self,request):
+        state_id = request.GET.get('stateId')
+        if state_id:
+            districts = Districts.objects.filter(state_id=state_id)
+        else:
+            districts = Districts.objects.all()
+        serializer = DistrictSerializer(districts, many=True)
+        return Response(serializer.data)
 class UserProfileView(APIView):
     permission_classes = [IsAuthenticated]
 
@@ -335,4 +354,49 @@ class Bookmarksetup(APIView):
         except Exception:
             return Response('something went wrong')
         
-        
+class RatingSetup(APIView):
+    permission_classes = [IsAuthenticated]
+    def post(self,request):
+        user = request.user
+        schemeId = request.GET.get('schemeId')
+        try:
+            
+            serializer = FeedbackSerializer(data=request.data)
+            scheme= Scheme.objects.get(id = schemeId)
+            print('marcoooo',scheme)
+
+            if serializer.is_valid():
+                print('ratingssssss')
+                rating = serializer.validated_data.get('rating')
+                
+                Rating.objects.update_or_create(
+                    user=user,
+                    scheme = scheme,
+                    defaults={'rating':rating}
+                )
+                return Response({'msg':'rating added successfully'})
+            return Response('something went wrong')
+        except Exception:
+            return Response('scheme does not exist')
+    
+    def get(self,request):
+        user = request.user
+        schemeId = request.GET.get('schemeId')
+        try:
+            scheme = Scheme.objects.get(id = schemeId)
+            average = Rating.objects.filter(scheme=scheme).aggregate(Avg('rating'))['rating__avg'] or 0
+            try:
+                userrating_obj = Rating.objects.get(scheme=scheme, user=user)
+                userrating = userrating_obj.rating
+            except Rating.DoesNotExist:
+                userrating = None    
+            totalrating = Rating.objects.filter(scheme=scheme).count() 
+            return Response({
+                'average': round(average or 0),
+                'userrating': userrating,
+                'totalrating': totalrating
+            })
+        except Exception:
+            return Response('something went wrong')       
+    
+

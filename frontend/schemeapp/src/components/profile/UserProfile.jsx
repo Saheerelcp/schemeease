@@ -9,11 +9,7 @@ import { useEffect } from 'react';
 import axios from 'axios';
 import { FaTrash } from 'react-icons/fa';
 
-const stateDistrictData = {
-    Kerala: ["Kozhikode", "Ernakulam", "Kannur"],
-    TamilNadu: ["Chennai", "Coimbatore", "Madurai"],
-    Karnataka: ["Bangalore", "Mysore", "Mangalore"],
-};
+
 
 function UserProfile() {
     const [validated, setValidated] = useState(false);
@@ -24,9 +20,11 @@ function UserProfile() {
         occupation: '',
         income: '', caste: '', disability: '', marital: ''
     });
+    const [states, setStates] = useState([]);
+    const [districts, setDistricts] = useState([]);
     const [selectedState, setSelectedState] = useState('');
-    const [districtOptions, setDistrictOptions] = useState([]); // List of districts for selected state
     const [selectedDistrict, setSelectedDistrict] = useState('');
+
     const [msg, setMsg] = useState('')
     const [msgaadhar, setMsgaadhar] = useState('')
     const [msgpin, setMsgpin] = useState('')
@@ -36,33 +34,38 @@ function UserProfile() {
 
 
     useEffect(() => {
-        axios.get('http://localhost:8000/api/user-profile/', {
-            withCredentials: true
-        })
-            .then((res) => {
-                const data = res.data;
-                if (data.profile && data.profile.fullname) {
-                    setFormData(data.profile);
+  if (states.length === 0) return;
 
-                    setSelectedState(data.state);
-                    const districts = stateDistrictData[data.state] || [];
-                    setDistrictOptions(districts);
+  axios.get('http://localhost:8000/api/user-profile/', {
+    withCredentials: true
+  })
+    .then((res) => {
+      const data = res.data;
+      if (data.profile && data.profile.fullname) {
+        setFormData(data.profile);
+        setSelectedState(data.state);
 
-                    setSelectedDistrict(data.district);
+        // Fetch districts for that state
+        axios.get(`http://localhost:8000/api/districts/?stateId=${data.state}`, {
+          withCredentials: true
+        }).then((districtRes) => {
+          setDistricts(districtRes.data);
 
-                    setComplete(data.profilecomplete); // This comes from backend
+          // Set district ID directly
+          setSelectedDistrict(data.district);
+        });
 
-                    // 🧠 If profile is already complete, make fields non-editable
-                    setIsEditable(false);
-                } else {
-                    // 🧠 No profile exists, editable form
-                    setIsEditable(true);
-                }
-            })
-            .catch((error) => {
-                console.error("No existing profile", error);
-            });
-    }, []);
+        setComplete(data.profilecomplete);
+        setIsEditable(false);
+      } else {
+        setIsEditable(true);
+      }
+    })
+    .catch((error) => {
+      console.error("No existing profile", error);
+    });
+}, [states]); // 🔁 This runs after states are set
+
 
     const handleDelete = async () => {
         try {
@@ -79,8 +82,9 @@ function UserProfile() {
             });
 
             setSelectedState('');
+            setStates([])
+            setDistricts([]);
             setSelectedDistrict('');
-            setDistrictOptions([]);
             setComplete(false);
             setIsEditable(true);
             setValidated(false);
@@ -96,6 +100,32 @@ function UserProfile() {
         const { name, value } = e.target;
         setFormData((prev) => ({ ...prev, [name]: value }));
     };
+
+useEffect(() => {
+  axios.get("http://localhost:8000/api/states/", { withCredentials: true })
+    .then((res) => {
+      setStates(res.data);
+    });
+}, []);
+
+
+
+
+const handleStateChange = (e) => {
+  const stateId = e.target.value;
+  setSelectedState(stateId);
+  setSelectedDistrict(""); // reset district
+
+  axios.get(`http://localhost:8000/api/districts/?stateId=${stateId}`, {
+    withCredentials: true
+  })
+    .then((res) => {
+      setDistricts(res.data);
+    })
+    .catch((err) => console.error(err));
+};
+
+
 
 
     const handlePhoneChange = (e) => {
@@ -150,6 +180,8 @@ function UserProfile() {
         }
         setValidated(true);
     };
+    console.log('district',districts)
+    console.log('selected district',selectedDistrict)
 
     return (
         <>
@@ -282,41 +314,34 @@ function UserProfile() {
                     <Row className="mb-3">
                         {/* State Select */}
                         <Form.Group controlId="stateSelect">
-                            <Form.Label>Select State</Form.Label>
-                            <Form.Select
-                                required
-                                value={selectedState || ''}
-                                disabled={!isEditable}
-                                onChange={(e) => {
-                                    const newState = e.target.value;
-                                    setSelectedState(newState);
-                                    const districts = stateDistrictData[newState] || [];
-                                    setDistrictOptions(districts);
-                                    setSelectedDistrict(''); // Reset district when state changes
-                                }}
-                            >
-                                <option value="">Select State</option>
-                                {Object.keys(stateDistrictData).map((stateName) => (
-                                    <option key={stateName} value={stateName}>{stateName}</option>
-                                ))}
-                            </Form.Select>
+  <Form.Label>Select State</Form.Label>
+  <Form.Select
+    required
+    value={selectedState}
+    disabled={!isEditable}
+    onChange={handleStateChange}
+  >
+    <option value="">Select State</option>
+    {states.map((state) => (
+      <option key={state.id} value={state.id}>{state.name}</option>
+    ))}
+  </Form.Select>
+</Form.Group>
 
-                        </Form.Group>
-                        <Form.Group controlId="districtSelect" className="mt-3">
-                            <Form.Label>Select District</Form.Label>
-                            <Form.Select
-                                required
-                                value={selectedDistrict || ''}
-
-                                onChange={(e) => setSelectedDistrict(e.target.value)}
-                                disabled={!selectedState || !isEditable}
-                            >
-                                <option value="">Select District</option>
-                                {districtOptions.map((district) => (
-                                    <option key={district} value={district}>{district}</option>
-                                ))}
-                            </Form.Select>
-                        </Form.Group>
+<Form.Group controlId="districtSelect" className="mt-3">
+  <Form.Label>Select District</Form.Label>
+  <Form.Select
+    required
+    value={selectedDistrict}
+    onChange={(e) => setSelectedDistrict(e.target.value)}
+    disabled={!selectedState || !isEditable}
+  >
+    <option value="">Select District</option>
+    {districts.map((district) => (
+      <option key={district.id} value={district.id}>{district.district}</option>
+    ))}
+  </Form.Select>
+</Form.Group>
 
 
 

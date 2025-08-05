@@ -3,7 +3,8 @@ import {
     Container, Row, Col, Tab, Nav, Button, Form, Alert, Modal
 } from 'react-bootstrap';
 import { FaRegBookmark, FaBookmark, FaDownload } from 'react-icons/fa';
-import { BsStar, BsStarFill } from 'react-icons/bs';
+import StarRatings from 'react-star-ratings';
+
 import axios from 'axios';
 import { useParams } from 'react-router-dom';
 import NavbarComponent from '../Navbar';
@@ -21,7 +22,10 @@ const ViewScheme = () => {
     const [allAnswersCorrect, setAllAnswersCorrect] = useState(false);
     const [showAlert, setShowAlert] = useState(false);
     const [scheme, setScheme] = useState({});
-    const [rating, setRating] = useState(0);
+    const [averageRating, setAverageRating] = useState(0);
+    const [totalRatings, setTotalRatings] = useState(0);
+    const [userRating, setUserRating] = useState(null);
+
     const [reasons, setReasons] = useState('')
 
     const [eligibilityQuestions, setEligibilityQuestions] = useState([]);
@@ -34,28 +38,38 @@ const ViewScheme = () => {
         eligibility: useRef(null),
         documents: useRef(null),
         check: useRef(null),
-        feedback: useRef(null),
+        rating: useRef(null),
     };
+
+    
+
     useEffect(() => {
-        const fetchData = async () => {
-            try {
-                const [schemeRes, profileRes, bookmark] = await Promise.all([
-                    axios.get(`http://localhost:8000/api/scheme-view/?schemeId=${schemeId}`, { withCredentials: true }),
-                    axios.get(`http://localhost:8000/api/user-profile`, { withCredentials: true }),
-                    axios.get(`http://localhost:8000/api/bookmarked/?schemeId=${schemeId}`, { withCredentials: true })
-                ]);
+    const fetchData = async () => {
+        try {
+            const [schemeRes, profileRes, bookmarkRes, ratingRes] = await Promise.all([
+                axios.get(`http://localhost:8000/api/scheme-view/?schemeId=${schemeId}`, { withCredentials: true }),
+                axios.get(`http://localhost:8000/api/user-profile`, { withCredentials: true }),
+                axios.get(`http://localhost:8000/api/bookmarked/?schemeId=${schemeId}`, { withCredentials: true }),
+                axios.get(`http://localhost:8000/api/rating/?schemeId=${schemeId}`, { withCredentials: true })
+            ]);
 
-                setProfileComplete(profileRes.data.profilecomplete);
-                console.log(profileRes.data.profilecomplete, 'heloooooooooooooooo')
-                setScheme(schemeRes.data);
-                setBookmarked(bookmark.data.is_bookmarked);
-            } catch (error) {
-                console.error("Error fetching data:", error);
-            }
-        };
+            setProfileComplete(profileRes.data.profilecomplete);
+            setScheme(schemeRes.data);
+            setBookmarked(bookmarkRes.data.is_bookmarked);
 
-        fetchData();
-    }, [schemeId]);
+            setAverageRating(ratingRes.data.average);
+            setUserRating(ratingRes.data.userrating);
+            setTotalRatings(ratingRes.data.totalrating);
+
+        } catch (error) {
+            console.error("Error fetching data:", error);
+        }
+    };
+
+    fetchData();
+}, [schemeId]);
+
+    console.log(averageRating,'averaaaaaaaaaaaaage')
     const handleBookmark = async () => {
     try {
         const newBookmarkState = !bookmarked; // Toggle value before sending
@@ -74,10 +88,24 @@ const ViewScheme = () => {
 };
 
 
-    const handleRating = (index) => {
-        setRating(index);
-        // TODO: Send rating to backend
-    };
+    const handleRating = async (index) => {
+    try {
+        setUserRating(index); // Optimistic UI update
+        await axios.post(
+            `http://localhost:8000/api/rating/?schemeId=${schemeId}`,
+            { rating: index },
+            { withCredentials: true }
+        );
+        // Re-fetch latest ratings from backend after successful rating
+        const res = await axios.get(`http://localhost:8000/api/rating/?schemeId=${schemeId}`, { withCredentials: true });
+        setAverageRating(res.data.average);
+        setUserRating(res.data.userrating);
+        setTotalRatings(res.data.totalrating);
+    } catch (err) {
+        console.error("Rating submission failed", err);
+    }
+};
+
 
 
 
@@ -206,13 +234,14 @@ const ViewScheme = () => {
                         </div>
 
                         <div ref={sectionsRef.documents} className="mb-5">
-                            <h5 className='text-primary'>Required Documents</h5>
-                            <ul>
-                                {scheme.required_documents?.split(',').map((doc, i) => (
-                                    <li key={i}>{doc.trim()}</li>
-                                ))}
-                            </ul>
-                        </div>
+  <h5 className='text-primary'>Required Documents</h5>
+  <ul>
+    {scheme.required_documents?.map((doc, i) => (
+      <li key={doc.id || i}>{doc.name}</li>
+    ))}
+  </ul>
+</div>
+
 
                         {scheme.attachment && <div className='mb-5'>
                             <a
@@ -345,16 +374,40 @@ const ViewScheme = () => {
                             </Modal.Footer>
                         </Modal>
 
-                        <div ref={sectionsRef.feedback} className="mb-5">
-                            <h5>Rate this Scheme</h5>
-                            <div className="d-flex">
-                                {[1, 2, 3, 4, 5].map((i) => (
-                                    <span key={i} onClick={() => handleRating(i)} style={{ cursor: 'pointer', fontSize: '1.5rem', color: 'gold' }}>
-                                        {rating >= i ? <BsStarFill /> : <BsStar />}
-                                    </span>
-                                ))}
-                            </div>
-                        </div>
+                       <div ref={sectionsRef.rating} className="p-3 border rounded shadow-sm bg-light">
+                        
+  <h5>Community Rating</h5>
+  {averageRating !== null ? (
+    <>
+      <StarRatings
+        rating={averageRating}
+        starRatedColor="#ffd700"
+        numberOfStars={5}
+        starDimension="24px"
+        starSpacing="2px"
+        name="community-rating"
+      />
+      <p>{averageRating.toFixed(1)} out of 5 ({totalRatings} ratings)</p>
+    </>
+  ) : (
+    <p>No ratings yet</p>
+  )}
+
+  <hr />
+
+  <h6>Your Rating</h6>
+  <StarRatings
+    rating={userRating || 0}
+    changeRating={handleRating}
+    starRatedColor="#00b894"
+    numberOfStars={5}
+    starDimension="24px"
+    starSpacing="2px"
+    name="user-rating"
+  />
+  {userRating ? <p>You rated: {userRating} out of 5</p> : null}
+</div>
+
                     </Col>
                 </Row>
             </Container>
