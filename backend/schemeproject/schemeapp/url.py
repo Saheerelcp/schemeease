@@ -1,5 +1,5 @@
 from django.urls import path
-from schemeapp.views import SendOTPView,VerifyOTPView,SetNewPasswordView,TotalUserCount,UserProfileView,SchemeSpecific,SchemeList,ViewScheme,CheckEligibility,Bookmarksetup,RatingSetup,StateCall,DistirctCall
+from schemeapp.views import SendOTPView,VerifyOTPView,SetNewPasswordView,TotalUserCount,UserProfileView,SchemeSpecific,SchemeList,ViewScheme,CheckEligibility,Bookmarksetup,RatingSetup,StateCall,DistirctCall,ApplyScheme,ViewAppliedScheme,ViewResultApply
 
 
 urlpatterns = [
@@ -15,5 +15,8 @@ urlpatterns = [
     path('bookmarked/',Bookmarksetup.as_view()),
     path('rating/',RatingSetup.as_view()),
     path('states/',StateCall.as_view()),
-    path('districts/',DistirctCall.as_view())
+    path('districts/',DistirctCall.as_view()),
+    path('apply-scheme/',ApplyScheme.as_view()),
+    path('applications/',ViewAppliedScheme.as_view()),
+    path('result-apply/',ViewResultApply.as_view())
 ]

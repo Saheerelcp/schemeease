@@ -9,11 +9,12 @@ from django.db.models import Q
 from django.db.models import Avg
 from rest_framework import status
 from django.db.models import Count
-from schemeapp.serializers import  BookmarkedSerializer, DistrictSerializer, EligibilityQuestionSerializer, FeedbackSerializer, SchemeSerializer, StateSerializer, UserProfileDisplay
-from .models import Bookmark, Districts, EligibilityQuestion, Rating, RequiredDocuments, Scheme, States, UpdatedUser, UserProfile
+from schemeapp.serializers import   ApplySchemeSerializer, BookmarkedSerializer, DistrictSerializer, EligibilityQuestionSerializer, FeedbackSerializer, SchemeSerializer, StateSerializer, SuccessfulSerializer, UserProfileDisplay
+from .models import Application, Bookmark, Districts, EligibilityQuestion, Rating, RequiredDocuments, Scheme, States, SuccessfulApply, UpdatedUser, UploadedDocument, UserProfile
 from django.core.mail import EmailMessage
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
+from rest_framework.parsers import MultiPartParser, FormParser
 
 
 class SendOTPView(APIView):
@@ -399,4 +400,71 @@ class RatingSetup(APIView):
         except Exception:
             return Response('something went wrong')       
     
+class ApplyScheme(APIView):
+    permission_classes = [IsAuthenticated]
+    parser_classes = (MultiPartParser, FormParser)
 
+    def post(self, request):
+        user = request.user
+        scheme_id = request.GET.get('schemeId')
+        # Validate scheme existence
+        scheme = Scheme.objects.get(id = scheme_id)
+
+        # Check if already applied
+        if Application.objects.filter(user=user, scheme=scheme).exists():
+            return Response("You have already applied for this scheme.")
+
+        # Fetch required documents for this scheme
+        required_docs = RequiredDocuments.objects.filter(scheme=scheme)
+
+        application = Application.objects.create(
+            user=user,
+            scheme=scheme,
+            status='Pending'
+        )
+        print("All received files:", request.FILES)
+
+        # Save uploaded documents
+        for required_doc in required_docs:
+            file = request.FILES.get(f"documents[{required_doc.id}]")
+            print('files', file)
+            if file:
+                UploadedDocument.objects.create(
+                application=application,
+                required_document=required_doc,
+                file=file
+                )
+        email_message = EmailMessage(
+            subject='Application Recieved',
+            body='Thank you for submitting your application. You can check your application status on Apply section in website.',
+            from_email='giveandtakestartup@gmail.com',
+            to=[user.email],
+            
+            )
+        email_message.send()
+        return Response(
+            "Application submitted successfully!",status=status.HTTP_201_CREATED)
+    
+class ViewAppliedScheme(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self,request):
+        user = request.user
+        try:
+            applicatonlist = Application.objects.filter(user = user)
+            applications_serializer = ApplySchemeSerializer(applicatonlist,many=True)
+            return Response(applications_serializer.data)
+        except UpdatedUser.DoesNotExist:
+            return Response('User is not valid')
+
+class ViewResultApply(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self,request):
+        applicationId = request.GET.get('applicationId')
+        try:
+            application = Application.objects.get(id = applicationId)
+            success = SuccessfulApply.objects.get(application = application)
+            application_serializer = SuccessfulSerializer(success)
+            return Response(application_serializer.data)
+        except Application.DoesNotExist:
+            return Response('Something went wrong')
+        

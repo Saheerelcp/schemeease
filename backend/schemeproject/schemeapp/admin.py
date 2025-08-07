@@ -1,7 +1,9 @@
 from django.utils import timezone
 from django.contrib import admin
-
-from schemeapp.models import Districts, EligibilityQuestion, RequiredDocuments, Scheme, States
+from django.utils.html import format_html
+from django.forms.models import BaseInlineFormSet
+from django.core.exceptions import ValidationError
+from schemeapp.models import Application, Districts, EligibilityQuestion,  RequiredDocuments, Scheme, States, SuccessfulApply, UploadedDocument
 
 # Register your models here.
 class ActiveNowFilter(admin.SimpleListFilter):
@@ -39,5 +41,65 @@ class SchemeAdmin(admin.ModelAdmin):
     ordering = ("-start_date",)
     list_per_page = 25
 
+
+
+
+
+
+
 admin.site.register(States)
 admin.site.register(Districts)
+
+class DocumentReviewInline(admin.TabularInline):
+    model = UploadedDocument
+    extra = 0
+    fields = ['document_name', 'file', 'is_approved', 'is_rejected', 'rejection_reason']
+    readonly_fields = ['file', 'document_name']
+
+    def document_name(self, instance):
+        return instance.required_document.name
+
+class RequiredSuccessPrintoutFormSet(BaseInlineFormSet):
+    def clean(self):
+        super().clean()
+
+        if any(self.errors):
+            return  # let normal errors raise first
+
+        # Require at least one filled inline
+        if not any(form.cleaned_data and not form.cleaned_data.get('DELETE', False) for form in self.forms):
+            raise ValidationError("You must add at least one success printout.")
+
+class SuccessPrintoutInline(admin.TabularInline):
+    model = SuccessfulApply
+    formset = RequiredSuccessPrintoutFormSet
+    extra =1
+@admin.register(Application)
+class ApplicationAdmin(admin.ModelAdmin):
+    list_display = ('id','user', 'status', 'all_documents_approved')
+    list_filter = ('status',)
+    readonly_fields = ['user','scheme']
+    
+    def all_documents_approved(self, obj):
+        documents = obj.uploaded_documents.all()
+        return documents.exists() and all(doc.is_approved for doc in documents)
+
+
+    all_documents_approved.boolean = True
+    all_documents_approved.short_description = "Documents Approved"
+
+    def get_inline_instances(self, request, obj=None):
+        if obj is None:
+            return []
+
+        inlines = [DocumentReviewInline(self.model, self.admin_site)]
+
+    # Show SuccessPrintoutInline only if all documents are approved
+        if obj.uploaded_documents.exists() and all(doc.is_approved for doc in obj.uploaded_documents.all()):
+            inlines.append(SuccessPrintoutInline(self.model, self.admin_site))
+
+        return inlines
+
+
+
+

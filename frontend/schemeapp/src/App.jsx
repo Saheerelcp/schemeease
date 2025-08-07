@@ -11,6 +11,9 @@ import Dashboard from './components/dashboard/Dashboard';
 import UserProfile from './components/profile/UserProfile';
 import SchemeList from './components/schemes/SchemeList';
 import ViewScheme from './components/schemes/ViewScheme';
+import ApplyScheme from './components/schemes/ApplyScheme';
+import Application from './components/schemes/Application';
+import ResultApply from './components/schemes/ResultApply';
 
 function App() {
   return (
@@ -25,6 +28,9 @@ function App() {
           <Route path='/user-profile' element={<UserProfile/>} />
           <Route path='/scheme/:category' element={<SchemeList/>} />
           <Route path='/view-scheme/:schemeId' element={<ViewScheme/>} />
+          <Route path='/apply-scheme/:schemeId' element={<ApplyScheme/>} />
+          <Route path='/application-view' element={<Application/>} />
+          <Route path='/result-apply/:applicationId' element={<ResultApply/>} />
       </Routes>
     </Router>
   )

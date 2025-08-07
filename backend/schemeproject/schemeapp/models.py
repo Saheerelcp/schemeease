@@ -4,6 +4,7 @@ from django.db import models
 
 from django.contrib.auth.models import AbstractUser
 from django.db import models
+from django.core.exceptions import ValidationError
 from django.utils import timezone
 from datetime import timedelta
 
@@ -141,4 +142,57 @@ class Districts(models.Model):
 
 class RequiredDocuments(models.Model):
     scheme = models.ForeignKey(Scheme,on_delete=models.CASCADE,related_name='required_documents')
-    name = models.CharField(max_length=100,help_text="List required documents, separated by commas")
+    name = models.CharField(max_length=100)
+
+class Application(models.Model):
+    user = models.ForeignKey(UpdatedUser, on_delete=models.CASCADE)
+    scheme = models.ForeignKey(Scheme, on_delete=models.CASCADE)
+    applied_at = models.DateTimeField(auto_now_add=True)
+    STATUS_CHOICES = [
+        ('Pending', 'Pending'),
+        ('Under Review', 'Under Review'),
+        ('Approved', 'Approved'),
+        ('Rejected', 'Rejected'),
+    ]
+    status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
+    def save(self, *args, **kwargs):
+        if self.uploaded_documents.exists():
+            if all(doc.is_approved for doc in self.uploaded_documents.all()):
+                self.status = 'Approved'
+            elif any(doc.is_rejected for doc in self.uploaded_documents.all()):
+                self.status = 'Rejected'
+            elif any(doc.is_approved or doc.is_rejected for doc in self.uploaded_documents.all()):
+                self.status = 'Under Review'
+            else:
+                self.status = 'Pending'
+        else:
+            self.status = 'Pending'
+        super().save(*args, **kwargs)
+    
+    def __str__(self):
+        return f"{self.user} - {self.scheme.title}"
+    
+class UploadedDocument(models.Model):
+    application = models.ForeignKey(Application, on_delete=models.CASCADE, related_name='uploaded_documents')
+    required_document = models.ForeignKey(RequiredDocuments, on_delete=models.CASCADE,related_name='required_document')
+    file = models.FileField(upload_to='uploads/documents/')
+    uploaded_at = models.DateTimeField(auto_now_add=True)
+    is_rejected = models.BooleanField(default=False)
+    rejection_reason = models.TextField(blank=True, null=True)
+    is_approved = models.BooleanField(default=False)
+    def save(self, *args, **kwargs):
+        super().save(*args, **kwargs)
+        self.application.save()
+    def clean(self):
+        if self.is_approved and self.is_rejected:
+            raise ValidationError("A document cannot be both approved and rejected.")
+        if self.is_rejected and not self.rejection_reason:
+            raise ValidationError("Please provide a rejection reason when rejecting a document.")
+    
+
+
+
+class SuccessfulApply(models.Model):
+    application = models.ForeignKey(Application,on_delete=models.CASCADE)
+    printout = models.FileField(upload_to='successful/printouts/')
+    added_at = models.DateTimeField(auto_now_add=True)

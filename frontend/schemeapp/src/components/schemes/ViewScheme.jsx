@@ -6,7 +6,7 @@ import { FaRegBookmark, FaBookmark, FaDownload } from 'react-icons/fa';
 import StarRatings from 'react-star-ratings';
 
 import axios from 'axios';
-import { useParams } from 'react-router-dom';
+import { useNavigate, useParams } from 'react-router-dom';
 import NavbarComponent from '../Navbar';
 import Footer from '../FooterComponent';
 import OverlayTrigger from 'react-bootstrap/OverlayTrigger';
@@ -14,6 +14,7 @@ import Tooltip from 'react-bootstrap/Tooltip';
 
 
 const ViewScheme = () => {
+    const navigate = useNavigate()
     const { schemeId } = useParams();
     const [bookmarked, setBookmarked] = useState(false);
     const [eligible, setEligible] = useState(false);
@@ -361,7 +362,7 @@ const ViewScheme = () => {
                             <Modal.Footer>
                                 {allAnswersCorrect ? (
                                     <Button variant="success" onClick={() => {
-                                        // You can trigger apply action here or redirect
+                                        navigate(`/apply-scheme/${schemeId}`)
                                         setShowResultModal(false);
                                     }}>
                                         Apply

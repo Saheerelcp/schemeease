@@ -51,7 +51,7 @@ function NavbarComponent() {
           <Nav.Link href="#home" className="nav-hover">Home</Nav.Link>
           {isComplete &&<Nav.Link  href="#eligible" className="nav-hover">Eligible</Nav.Link>}
           <Nav.Link href="#bookmarked" className="nav-hover">Bookmarked</Nav.Link>
-          <Nav.Link href="#applied" className="nav-hover">Applied</Nav.Link>
+          <Nav.Link href="/application-view" className="nav-hover">Applied</Nav.Link>
         </Nav>
 
         <div className="d-flex align-items-center gap-3 me-3">
