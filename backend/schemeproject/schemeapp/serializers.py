@@ -1,6 +1,6 @@
 from rest_framework import serializers
 
-from schemeapp.models import Application, Bookmark, Districts, EligibilityQuestion, Rating, RequiredDocuments, Scheme, States, SuccessfulApply, UserProfile
+from schemeapp.models import Application, Bookmark, Districts, EligibilityQuestion, Rating, RequiredDocuments, Scheme, States, SuccessfulApply, UploadedDocument, UserProfile
 
 class DistrictSerializer(serializers.ModelSerializer):
     class Meta:
@@ -42,9 +42,10 @@ class EligibilityQuestionSerializer(serializers.ModelSerializer):
         fields = ['id','question_text','type','field_name']
 
 class BookmarkedSerializer(serializers.ModelSerializer):
+    bookmarkId = serializers.IntegerField(required=False)
     class Meta:
         model = Bookmark
-        fields = ['is_bookmarked']
+        fields = ['is_bookmarked','bookmarkId']
     
 class FeedbackSerializer(serializers.ModelSerializer):
     class Meta:
@@ -65,3 +66,19 @@ class SuccessfulSerializer(serializers.ModelSerializer):
     class Meta:
         model = SuccessfulApply
         fields = ['id','status','scheme_name','printout']
+
+class UploadDocumentSerializer(serializers.ModelSerializer):
+    scheme_name = serializers.CharField(source = 'application.scheme.title',read_only=True)
+    status = serializers.CharField(source = 'application.status',read_only = True)
+    required_document=serializers.CharField(source='required_document.name',read_only=True)
+    class Meta:
+        model = UploadedDocument
+        fields = ['id','status','scheme_name','required_document','file','rejection_reason']
+
+class BookmarkViewSerializer(serializers.ModelSerializer):
+    title = serializers.CharField(source = 'scheme.title',read_only = True)
+    description = serializers.CharField(source = 'scheme.description',read_only=True)
+    
+    class Meta:
+        model = Bookmark
+        fields = ['id','scheme','title','description']

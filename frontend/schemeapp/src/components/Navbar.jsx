@@ -50,7 +50,7 @@ function NavbarComponent() {
         <Nav className="mx-auto gap-4">
           <Nav.Link href="#home" className="nav-hover">Home</Nav.Link>
           {isComplete &&<Nav.Link  href="#eligible" className="nav-hover">Eligible</Nav.Link>}
-          <Nav.Link href="#bookmarked" className="nav-hover">Bookmarked</Nav.Link>
+          <Nav.Link href="bookmark-view" className="nav-hover">Bookmarked</Nav.Link>
           <Nav.Link href="/application-view" className="nav-hover">Applied</Nav.Link>
         </Nav>
 

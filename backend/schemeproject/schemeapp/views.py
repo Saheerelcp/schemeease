@@ -9,7 +9,7 @@ from django.db.models import Q
 from django.db.models import Avg
 from rest_framework import status
 from django.db.models import Count
-from schemeapp.serializers import   ApplySchemeSerializer, BookmarkedSerializer, DistrictSerializer, EligibilityQuestionSerializer, FeedbackSerializer, SchemeSerializer, StateSerializer, SuccessfulSerializer, UserProfileDisplay
+from schemeapp.serializers import   ApplySchemeSerializer, BookmarkViewSerializer, BookmarkedSerializer, DistrictSerializer, EligibilityQuestionSerializer, FeedbackSerializer, SchemeSerializer, StateSerializer, SuccessfulSerializer, UploadDocumentSerializer, UserProfileDisplay
 from .models import Application, Bookmark, Districts, EligibilityQuestion, Rating, RequiredDocuments, Scheme, States, SuccessfulApply, UpdatedUser, UploadedDocument, UserProfile
 from django.core.mail import EmailMessage
 from django.contrib.auth.password_validation import validate_password
@@ -331,11 +331,16 @@ class Bookmarksetup(APIView):
         schemeId = request.GET.get('schemeId')
         try:
             scheme = Scheme.objects.get(id = schemeId)
-            print(user,'helii')
             serializer = BookmarkedSerializer(data=request.data)
-            print('kuttistory')
             if serializer.is_valid():
                 is_bookmarked = serializer.validated_data.get('is_bookmarked', True)
+                bookmarkId = serializer.validated_data.get('bookmarkId')
+                if is_bookmarked is False:
+                    try:
+                        Bookmark.objects.get(id=bookmarkId).delete()
+                        return Response({'msg':'deleted'})
+                    except Bookmark.DoesNotExist:
+                        return Response({'msg':'bookmark does not exist'})
                 Bookmark.objects.update_or_create(user=user,scheme=scheme,defaults={'is_bookmarked': is_bookmarked})
                 return Response({'msg':'Bookmarked'})
             print(serializer.errors)
@@ -347,10 +352,11 @@ class Bookmarksetup(APIView):
         scheme = request.GET.get("schemeId")
         try:
             bookmark = Bookmark.objects.get(user=user,scheme = scheme)
+            print('bookmarkId',bookmark.id)
             if bookmark:
-                return Response({'is_bookmarked':bookmark.is_bookmarked})
+                return Response({'is_bookmarked':bookmark.is_bookmarked,'bookmarkId':bookmark.id})
             else:
-                return Response({'is_bookmarked':False})
+                return Response({'is_bookmarked':False,'bookmarkId':bookmark.id})
             
         except Exception:
             return Response('something went wrong')
@@ -462,9 +468,53 @@ class ViewResultApply(APIView):
         applicationId = request.GET.get('applicationId')
         try:
             application = Application.objects.get(id = applicationId)
-            success = SuccessfulApply.objects.get(application = application)
-            application_serializer = SuccessfulSerializer(success)
-            return Response(application_serializer.data)
+            if application.status == 'Approved':
+                success = SuccessfulApply.objects.get(application = application)
+                application_serializer = SuccessfulSerializer(success)
+                return Response({'status':application.status,'result':application_serializer.data})
+            elif application.status == 'Rejected':
+                rejection = UploadedDocument.objects.filter(application = application)
+                rejection_serializer = UploadDocumentSerializer(rejection,many=True)
+                return Response({'status':application.status,'result':rejection_serializer.data})
+            elif application.status =='Pending' or application.status =='Under Review':
+                review_serializer = ApplySchemeSerializer(application)
+                return Response({'status':application.status,'result':review_serializer.data})
+            else:
+                return Response('something went wrong')
         except Application.DoesNotExist:
             return Response('Something went wrong')
+
+class ReuploadFile(APIView):
+    permission_classes = [IsAuthenticated]
+    def put(self,request):
+        documentId = request.GET.get('documentId')  
+        try:
+            doc = UploadedDocument.objects.get(id=documentId)
+            file = request.FILES.get('file')
+            if file:
+                doc.file = file
+                doc.is_approved = False
+                doc.rejection_reason = ''
+                doc.save()
+                return Response({'message':'Document reuploaded successfully'})
+            else:
+                return Response({'message':'No file is returned'})
+        except UploadedDocument.DoesNotExist:
+            return Response({'message':'No document exist'})
         
+class BookmarkView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self,request):
+        user = request.user
+        
+        bookmarked = Bookmark.objects.filter(user = user).select_related('scheme')
+        search = request.GET.get("search")
+        if search:
+            bookmarked = bookmarked.filter(scheme__title__icontains=search)
+        sort_order = request.GET.get('sort')
+        if sort_order == 'Z-A':
+            bookmarked = bookmarked.order_by('-scheme__title')
+        else:
+            bookmarked = bookmarked.order_by('scheme__title')
+        bookmark_serializer = BookmarkViewSerializer(bookmarked,many=True)
+        return Response(bookmark_serializer.data)

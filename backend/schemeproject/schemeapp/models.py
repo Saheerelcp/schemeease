@@ -188,7 +188,8 @@ class UploadedDocument(models.Model):
             raise ValidationError("A document cannot be both approved and rejected.")
         if self.is_rejected and not self.rejection_reason:
             raise ValidationError("Please provide a rejection reason when rejecting a document.")
-    
+        if self.is_approved and self.rejection_reason:
+            raise ValidationError("You can't add rejection reason for approved applications")
 
 
 

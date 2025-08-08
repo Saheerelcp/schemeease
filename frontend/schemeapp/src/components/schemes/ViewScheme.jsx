@@ -28,7 +28,7 @@ const ViewScheme = () => {
     const [userRating, setUserRating] = useState(null);
 
     const [reasons, setReasons] = useState('')
-
+    const[bookmarkId,setBookmarkId]= useState('')
     const [eligibilityQuestions, setEligibilityQuestions] = useState([]);
     const [showResultModal, setShowResultModal] = useState(false);
 
@@ -57,7 +57,7 @@ const ViewScheme = () => {
             setProfileComplete(profileRes.data.profilecomplete);
             setScheme(schemeRes.data);
             setBookmarked(bookmarkRes.data.is_bookmarked);
-
+            setBookmarkId(bookmarkRes.data.bookmarkId)
             setAverageRating(ratingRes.data.average);
             setUserRating(ratingRes.data.userrating);
             setTotalRatings(ratingRes.data.totalrating);
@@ -70,13 +70,13 @@ const ViewScheme = () => {
     fetchData();
 }, [schemeId]);
 
-    console.log(averageRating,'averaaaaaaaaaaaaage')
+    console.log(bookmarkId,'kittiyoooooooooooooo')
     const handleBookmark = async () => {
     try {
         const newBookmarkState = !bookmarked; // Toggle value before sending
           axios.post(
             `http://localhost:8000/api/bookmarked/?schemeId=${schemeId}`,
-            { is_bookmarked: newBookmarkState },
+            { is_bookmarked: newBookmarkState ,bookmarkId:bookmarkId},
             { withCredentials: true }
         );
 
