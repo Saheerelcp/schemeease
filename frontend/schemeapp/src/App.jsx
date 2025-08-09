@@ -15,6 +15,7 @@ import ApplyScheme from './components/schemes/ApplyScheme';
 import Application from './components/schemes/Application';
 import ResultApply from './components/schemes/ResultApply';
 import Bookmark from './components/schemes/Bookmark';
+import Recommended from './components/schemes/Recommended';
 
 function App() {
   return (
@@ -33,6 +34,7 @@ function App() {
           <Route path='/application-view' element={<Application/>} />
           <Route path='/result-apply/:applicationId' element={<ResultApply/>} />
           <Route path='/bookmark-view' element={<Bookmark/>} />
+          <Route path='/recommended-view' element={<Recommended/>} />
       </Routes>
     </Router>
   )

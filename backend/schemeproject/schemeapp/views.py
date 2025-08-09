@@ -518,3 +518,60 @@ class BookmarkView(APIView):
             bookmarked = bookmarked.order_by('scheme__title')
         bookmark_serializer = BookmarkViewSerializer(bookmarked,many=True)
         return Response(bookmark_serializer.data)
+
+class RecommendedView(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self,request):
+        user = request.user
+        scheme = Scheme.objects.all()
+        try:
+            profile = UserProfile.objects.get(userid=user)
+            scheme_list = []
+            search = request.GET.get('search')
+            sort_order = request.GET.get('sort')
+            dob = profile.dob
+            today = date.today()
+            age = today.year - dob.year - ((today.month,today.day) <(dob.month , dob.day))
+            for i in scheme:
+                basic_eligible = True
+                if i.min_age and age < i.min_age :
+                    basic_eligible = False
+                if i.max_age and age > i.max_age:
+                    basic_eligible = False
+                if i.gender != 'Any' and i.gender != profile.gender:
+                    basic_eligible = False
+                if i.disability_required != 'Any' and i.disability_required != profile.disability:
+                    basic_eligible = False
+                if i.required_education != 'any' and i.required_education != profile.study:
+                    basic_eligible = False
+                if i.occupation != 'any' and (i.occupation).lower() != (profile.occupation).lower():
+                    basic_eligible = False
+                if i.eligible_castes :
+                    allowed_castes = [c.strip().lower() for c in i.eligible_castes.split(',')]
+                    if profile.caste.lower()  not in allowed_castes:
+                        basic_eligible = False
+                if profile.income >= i.income_limit:
+                    basic_eligible = False
+                if basic_eligible:
+                    if not search or search.lower() in i.title.lower():
+                        scheme_list.append(i)
+                    
+            
+            if sort_order:
+                if sort_order == 'Z-A':
+                    scheme_list = sorted(scheme_list, key=lambda s: s.title, reverse=True)
+                else:
+                    scheme_list = sorted(scheme_list, key=lambda s:s.title)
+            
+            scheme_serializer = SchemeSerializer(scheme_list,many=True)
+            return Response(scheme_serializer.data)
+        except UserProfile.DoesNotExist:
+            return Response('Userprofile does not exist')
+        
+        
+
+
+                
+            
+    
+    
