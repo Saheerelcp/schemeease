@@ -188,7 +188,7 @@ const handleStateChange = (e) => {
             <NavbarComponent />
             {!isComplete && <Alert variant='warning' >
                 <p className='d-flex justify-content-center align-items-center'>
-                    "Complete your profile to unlock access to eligible schemes tailored for you."
+                    "Complete your profile to unlock access to recommended schemes tailored for you."
                 </p>
             </Alert>}
             <ToastContainer />

@@ -16,9 +16,14 @@ import Application from './components/schemes/Application';
 import ResultApply from './components/schemes/ResultApply';
 import Bookmark from './components/schemes/Bookmark';
 import Recommended from './components/schemes/Recommended';
+import Notifications from './components/Notifications';
+import AboutUs from './components/AboutUs';
+import FAQs from './components/Faqs';
+
 
 function App() {
   return (
+    
     <Router>
       <Routes>
           <Route path='/' element = {<LoginPage/>} />
@@ -35,8 +40,12 @@ function App() {
           <Route path='/result-apply/:applicationId' element={<ResultApply/>} />
           <Route path='/bookmark-view' element={<Bookmark/>} />
           <Route path='/recommended-view' element={<Recommended/>} />
+          <Route path='/notifications' element={<Notifications/>} />
+          <Route path='/aboutus' element={<AboutUs/>} />
+          <Route path='/faqs' element={<FAQs/>} />
       </Routes>
     </Router>
+  
   )
 }
 

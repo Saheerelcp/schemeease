@@ -7,9 +7,9 @@ import { Card ,Modal} from 'react-bootstrap';
 import { Link } from 'react-router-dom';
 import {  FaSearch , FaLeaf, FaBook, FaStethoscope, FaTools, FaHome, FaArrowRight,FaUserEdit, FaClipboardCheck, FaRegBell } from 'react-icons/fa';
 import Carousel from 'react-bootstrap/Carousel';
-import frame1 from '../../images/hand-holding-red-icon.jpg'
-import frame2 from '../../images/so-many-vegetables-this-field.jpg'
-import frame3 from '../../images/two-students-studying-together-online-with-laptop-park.jpg'
+import frame1 from '../../images/stethoscope-4280497_1280.jpg'
+import frame2 from '../../images/hand-holding-red-icon.jpg'
+import frame3 from '../../images/irrigation-7262563_1280.jpg'
 import CountUp from 'react-countup';
 import axios from 'axios';
 
@@ -20,6 +20,7 @@ function Dashboard() {
     const [user , setUser] = useState(0)
     const [show,setShow] = useState(false)
     const [scheme,setScheme] = useState(0)
+    const [applicatoncount,setApplicationcount] = useState(0)
     const [isComplete,setComplete] = useState(true)
     const [schemeCategories,setSchemeCategories] = useState([])
     
@@ -84,6 +85,7 @@ function Dashboard() {
             setUser(res.data.usertotal);
             setComplete(res.data.profilecompletion);
             setScheme(res.data.totalscheme)
+            setApplicationcount(res.data.applicationcount)
         })
         .catch(err => {
             console.error("Something went wrong",err)
@@ -106,7 +108,7 @@ function Dashboard() {
           <Modal.Title>Complete Your Profile</Modal.Title>
         </Modal.Header>
         <Modal.Body>
-          Welcome! To access scheme eligibility and other features, please complete your profile.
+          Welcome! To access recommended scheme and other features, please complete your profile.
         </Modal.Body>
         <Modal.Footer>
           <Button variant="primary" onClick={() => {
@@ -128,9 +130,12 @@ function Dashboard() {
         />
         <Carousel.Caption>
           <div className="d-flex gap-2 mb-5  justify-content-center align-items-center">
-        <Button variant="primary"  className='px-5 py-3 fw-bold' >
-          Check Your Schemas
-        </Button>
+          <Link to={isComplete ? "/recommended-view" : "/user-profile"}>
+  <Button variant="primary" className="px-5 py-3 fw-bold">
+    {isComplete ? "Check Your Schemes" : "Complete Your Profile"}
+  </Button>
+</Link>
+
       </div>
         </Carousel.Caption>
       </Carousel.Item>
@@ -143,9 +148,11 @@ function Dashboard() {
         />
         <Carousel.Caption>
            <div className="d-flex gap-2 mb-5  justify-content-center align-items-center">
-        <Button variant="primary"  className='px-5 py-3 fw-bold' >
-          Check Your Schemas
-        </Button>
+       <Link to={isComplete ? "/recommended-view" : "/user-profile"}>
+  <Button variant="primary" className="px-5 py-3 fw-bold">
+    {isComplete ? "Check Your Schemes" : "Complete Your Profile"}
+  </Button>
+</Link>
       </div>
         </Carousel.Caption>
       </Carousel.Item>
@@ -158,9 +165,11 @@ function Dashboard() {
         />
         <Carousel.Caption>
            <div className="d-flex gap-2 mb-5  justify-content-center align-items-center">
-        <Button variant="primary"  className='px-5 py-3 fw-bold' >
-          Check Your Schemas
-        </Button>
+        <Link to={isComplete ? "/recommended-view" : "/user-profile"}>
+  <Button variant="primary" className="px-5 py-3 fw-bold">
+    {isComplete ? "Check Your Schemes" : "Complete Your Profile"}
+  </Button>
+</Link>
       </div>
         </Carousel.Caption>
       </Carousel.Item>
@@ -190,7 +199,7 @@ function Dashboard() {
     <div className="text-center bg-light text-primary border rounded-3 px-4 py-3">
       <h5>Total Applications</h5>
       <h2 className="display-6 fw-bolder">
-        <CountUp end={5000} duration={3} />
+        <CountUp end={applicatoncount} duration={3} />
       </h2>
     </div>
   </Col>

@@ -255,16 +255,16 @@ const ViewScheme = () => {
                             </a>
                         </div>}
                         <div ref={sectionsRef.check} className="mb-5">
-                            {showAlert && (
-                                <Alert variant="danger" onClose={() => setShowAlert(false)} dismissible>
-                                    Please complete your profile to check eligibility!
-                                </Alert>
-                            )}
+                           
                             <h5>Check Eligibility</h5>
                             <Button variant="primary" className="mb-3" onClick={handleEligibilityCheck}>
                                 Check Eligibility
                             </Button>
-
+                             {showAlert && (
+                                <Alert variant="danger" onClose={() => setShowAlert(false)} dismissible>
+                                    Please complete your profile to check eligibility!
+                                </Alert>
+                            )}
                             {eligible && (
                                 <>
                                     <Form.Check

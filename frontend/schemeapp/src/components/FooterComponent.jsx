@@ -14,9 +14,8 @@ function Footer() {
           <Col md={4} className="mb-3">
             <h6>Quick Links</h6>
             <ul className="list-unstyled">
-              <li><a href="/about" className="text-light text-decoration-none">About Us</a></li>
-              <li><a href="/contact" className="text-light text-decoration-none">Contact</a></li>
-              <li><a href="/faq" className="text-light text-decoration-none">FAQs</a></li>
+              <li><a href="/aboutus" className="text-light text-decoration-none">About Us</a></li>
+              <li><a href="/faqs" className="text-light text-decoration-none">FAQs</a></li>
             </ul>
           </Col>
           

@@ -1,6 +1,9 @@
 from rest_framework import serializers
+from dj_rest_auth.registration.serializers import RegisterSerializer
+from rest_framework_simplejwt.tokens import RefreshToken
 
-from schemeapp.models import Application, Bookmark, Districts, EligibilityQuestion, Rating, RequiredDocuments, Scheme, States, SuccessfulApply, UploadedDocument, UserProfile
+from schemeapp.models import Application, Bookmark, Districts, EligibilityQuestion, Notifications, Rating, RequiredDocuments, Scheme, States, SuccessfulApply, UploadedDocument, UserProfile
+
 
 class DistrictSerializer(serializers.ModelSerializer):
     class Meta:
@@ -82,3 +85,8 @@ class BookmarkViewSerializer(serializers.ModelSerializer):
     class Meta:
         model = Bookmark
         fields = ['id','scheme','title','description']
+
+class NotificationSerializer(serializers.ModelSerializer):
+    class Meta:
+        model = Notifications
+        fields = '__all__'

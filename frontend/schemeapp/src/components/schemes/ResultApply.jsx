@@ -3,6 +3,8 @@ import { useParams } from 'react-router-dom';
 import axios from 'axios';
 import { Container, Spinner, Card, Alert, Button ,Form } from 'react-bootstrap';
 import NavbarComponent from '../Navbar';
+import { ToastContainer, toast } from 'react-toastify';
+import 'react-toastify/dist/ReactToastify.css';
 import {
   FaFilePdf,
   FaTimesCircle,
@@ -16,8 +18,12 @@ const ResultApply = () => {
   const [loading, setLoading] = useState(true);
   const [status, setStatus] = useState('');
   const [reuploadFiles, setReuploadFiles] = useState({}); // { docId: File }
+  const [rejectedDocuments, setRejectedDocuments] = useState([]);
 
   useEffect(() => {
+  //   if (rejectedDocuments.length === 0) {
+  //   setStatus("Pending");
+  // }
     const fetchStatus = async () => {
       try {
         const res = await axios.get(`http://localhost:8000/api/result-apply/?applicationId=${applicationId}`, {
@@ -25,13 +31,21 @@ const ResultApply = () => {
         });
         setApplication(res.data.result);
         setStatus(res.data.status);
+        console.log(res.data.status)
+        if (res.data.status =="Rejected"){
+        const rejected = res.data.result;
+        console.log(rejected,'hello')
+        setRejectedDocuments(rejected);
+          
+        }
+        
       } catch (error) {
         console.error('Error fetching application status:', error);
       } finally {
         setLoading(false);
       }
     };
-
+     
     fetchStatus();
   }, [applicationId]);
 
@@ -50,7 +64,7 @@ const ResultApply = () => {
     formData.append('file', file);
 
     try {
-       await axios.put(
+       const res=await axios.put(
         `http://localhost:8000/api/reupload-document/?documentId=${documentId}`,
         formData,
         {
@@ -60,12 +74,21 @@ const ResultApply = () => {
           },
         }
       );
+      toast.success(res.data.message, { position: 'top-right', autoClose: 2000 });
+      setRejectedDocuments((prev) => {
+      const updatedList = prev.filter((doc) => doc.id !== documentId);
+      if (updatedList.length === 0) {
+        setStatus("Pending");
+      }
 
-      alert('File re-uploaded successfully');
+      return updatedList;
+    });
+      
       // Optional: Remove file from state
       setReuploadFiles((prev) => {
         const updated = { ...prev };
         delete updated[documentId];
+        
         return updated;
       });
     } catch (error) {
@@ -73,7 +96,7 @@ const ResultApply = () => {
       alert('Failed to re-upload file. Please try again.');
     }
   };
-
+  
   if (loading) {
     return (
       <>
@@ -96,17 +119,18 @@ const ResultApply = () => {
       </>
     );
   }
-
+  
   return (
     <>
+    <ToastContainer/>
       <NavbarComponent />
       <Container className="mt-5">
         {status === 'Approved' && (
           <Card className="text-center border-success">
             <Card.Body>
-              <Card.Title className="text-success">🎉 Congratulations!</Card.Title>
+              <Card.Title className="text-success"> Congratulations!</Card.Title>
               <Card.Text>
-                Your application for <strong>{application.scheme_name}</strong> has been approved.
+                Your application for <strong>{application.scheme_name}</strong> has been applied.
               </Card.Text>
               <Button variant="success" href={`http://localhost:8000${application.printout}`} download target="_blank">
                 Download PDF
@@ -129,7 +153,7 @@ const ResultApply = () => {
     </p>
 
     <div className="list-group">
-      {application.map((doc, index) => (
+      {rejectedDocuments.map((doc, index) => (
         <div key={index} className="list-group-item mb-3 border rounded shadow-sm p-3">
           <div className="row align-items-center mb-2">
           
@@ -161,10 +185,8 @@ const ResultApply = () => {
               </div>
             </div>
 
-            {/* Right: Upload + Confirm */}
             <div className="col-md-4 text-md-end mt-2 mt-md-0">
               <div className="d-flex align-items-center justify-content-md-end flex-wrap gap-2">
-                {/* Hidden Input */}
                 <Form.Control
                   type="file"
                   id={`file-input-${doc.id}`}
@@ -173,13 +195,11 @@ const ResultApply = () => {
                   onChange={(e) => handleFileChange(doc.id, e.target.files[0])}
                 />
 
-                {/* Label as Button */}
                 <label htmlFor={`file-input-${doc.id}`} className="btn btn-outline-primary btn-sm mb-0">
                   <FaUpload className="me-1" />
                   Upload
                 </label>
 
-                {/* Confirm Button */}
                 <Button
                   variant="outline-success"
                   size="sm"

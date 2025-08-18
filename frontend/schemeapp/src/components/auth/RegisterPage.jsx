@@ -30,7 +30,7 @@ function RegisterPage() {
       localStorage.setItem('justregistered','true')
 
       setTimeout(() => {
-        navigate('/dashboard');
+        navigate('/');
       }, 2000);
     } catch (error) {
       console.error(error);

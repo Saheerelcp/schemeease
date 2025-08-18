@@ -5,12 +5,16 @@ from rest_framework.response import Response
 from rest_framework.views import APIView
 from rest_framework.permissions import IsAuthenticated
 # from django.core.mail import send_mail
+from datetime import timedelta
+from django.utils.timezone import now
+from rest_framework.permissions import AllowAny
+
 from django.db.models import Q
 from django.db.models import Avg
 from rest_framework import status
 from django.db.models import Count
-from schemeapp.serializers import   ApplySchemeSerializer, BookmarkViewSerializer, BookmarkedSerializer, DistrictSerializer, EligibilityQuestionSerializer, FeedbackSerializer, SchemeSerializer, StateSerializer, SuccessfulSerializer, UploadDocumentSerializer, UserProfileDisplay
-from .models import Application, Bookmark, Districts, EligibilityQuestion, Rating, RequiredDocuments, Scheme, States, SuccessfulApply, UpdatedUser, UploadedDocument, UserProfile
+from schemeapp.serializers import   ApplySchemeSerializer, BookmarkViewSerializer, BookmarkedSerializer, DistrictSerializer, EligibilityQuestionSerializer, FeedbackSerializer, NotificationSerializer, SchemeSerializer, StateSerializer, SuccessfulSerializer, UploadDocumentSerializer, UserProfileDisplay
+from .models import Application, Bookmark, Districts, EligibilityQuestion, Notifications, Rating, RequiredDocuments, Scheme, States, SuccessfulApply, UpdatedUser, UploadedDocument, UserProfile
 from django.core.mail import EmailMessage
 from django.contrib.auth.password_validation import validate_password
 from django.core.exceptions import ValidationError
@@ -18,6 +22,8 @@ from rest_framework.parsers import MultiPartParser, FormParser
 
 
 class SendOTPView(APIView):
+    permission_classes = [AllowAny]  # Important
+
     def post(self, request):
         email = request.data.get('email')
         try:
@@ -42,6 +48,7 @@ class SendOTPView(APIView):
 # views.py
 
 class VerifyOTPView(APIView):
+    permission_classes = [AllowAny]  # Important
     def post(self, request):
         email = request.data.get('email')
         otp = request.data.get('otp')
@@ -60,6 +67,7 @@ class VerifyOTPView(APIView):
             return Response({'error': 'User not found'}, status=404)
 
 class SetNewPasswordView(APIView):
+    permission_classes = [AllowAny]  
     def post(self, request):
         email = request.data.get('email')
         new_password = request.data.get('new_password')
@@ -90,12 +98,29 @@ class TotalUserCount(APIView):
         user = request.user
         iscompleted=False
         schemacount = Scheme.objects.count()
+        applicationcount = Application.objects.count()
         try:
             profilecompletion = UserProfile.objects.get(userid = user)
             iscompleted = profilecompletion.is_profile_complete
         except UserProfile.DoesNotExist:
             pass
-        return Response({'usertotal':usercount,'profilecompletion':iscompleted,'totalscheme':schemacount})
+        # Bookmark expiry notification check
+        from .models import Bookmark  # Import here to avoid circular imports
+        bookmarks = Bookmark.objects.filter(user=user)
+
+        if bookmarks.exists():
+            today = now().date()
+            expiry_date_threshold = today + timedelta(days=2)  # 2 days before expiry
+            expiring_bookmarks = bookmarks.filter(scheme__end_date__lte=expiry_date_threshold)
+
+            for bookmark in expiring_bookmarks:
+                # Create a notification (no duplicates for the same scheme)
+                Notifications.objects.get_or_create(
+                    user=user,
+                    message=f"The scheme '{bookmark.scheme.title}' is expiring soon on {bookmark.scheme.end_date}."
+                )
+        
+        return Response({'usertotal':usercount,'profilecompletion':iscompleted,'totalscheme':schemacount,'applicationcount':applicationcount})
 class StateCall(APIView):
     permission_classes = [IsAuthenticated]
     def get(self,request):
@@ -413,16 +438,13 @@ class ApplyScheme(APIView):
     def post(self, request):
         user = request.user
         scheme_id = request.GET.get('schemeId')
-        # Validate scheme existence
         scheme = Scheme.objects.get(id = scheme_id)
 
-        # Check if already applied
         if Application.objects.filter(user=user, scheme=scheme).exists():
-            return Response("You have already applied for this scheme.")
+            return Response({'repeat':"You have already applied for this scheme."})
 
-        # Fetch required documents for this scheme
         required_docs = RequiredDocuments.objects.filter(scheme=scheme)
-
+        print(user,scheme)
         application = Application.objects.create(
             user=user,
             scheme=scheme,
@@ -448,6 +470,7 @@ class ApplyScheme(APIView):
             
             )
         email_message.send()
+
         return Response(
             "Application submitted successfully!",status=status.HTTP_201_CREATED)
     
@@ -466,18 +489,29 @@ class ViewResultApply(APIView):
     permission_classes = [IsAuthenticated]
     def get(self,request):
         applicationId = request.GET.get('applicationId')
+        user = request.user
+
         try:
             application = Application.objects.get(id = applicationId)
             if application.status == 'Approved':
                 success = SuccessfulApply.objects.get(application = application)
                 application_serializer = SuccessfulSerializer(success)
+                
+
                 return Response({'status':application.status,'result':application_serializer.data})
             elif application.status == 'Rejected':
+                rejected_documents=[]
                 rejection = UploadedDocument.objects.filter(application = application)
-                rejection_serializer = UploadDocumentSerializer(rejection,many=True)
+                
+                for i in rejection:
+                    if i.is_rejected:
+                        rejected_documents.append(i)
+                rejection_serializer = UploadDocumentSerializer(rejected_documents,many=True)
+                
                 return Response({'status':application.status,'result':rejection_serializer.data})
             elif application.status =='Pending' or application.status =='Under Review':
                 review_serializer = ApplySchemeSerializer(application)
+               
                 return Response({'status':application.status,'result':review_serializer.data})
             else:
                 return Response('something went wrong')
@@ -494,6 +528,7 @@ class ReuploadFile(APIView):
             if file:
                 doc.file = file
                 doc.is_approved = False
+                doc.is_rejected = False
                 doc.rejection_reason = ''
                 doc.save()
                 return Response({'message':'Document reuploaded successfully'})
@@ -567,11 +602,36 @@ class RecommendedView(APIView):
             return Response(scheme_serializer.data)
         except UserProfile.DoesNotExist:
             return Response('Userprofile does not exist')
-        
-        
-
-
-                
-            
     
-    
+class NotificationDisplay(APIView):
+    permission_classes = [IsAuthenticated]
+    def get(self,request):
+        user = request.user
+        try:
+            userNotification = Notifications.objects.filter(user = user).order_by('-added_at')
+            notification_serializer = NotificationSerializer(userNotification,many=True)
+            return Response(notification_serializer.data)
+        except UpdatedUser.DoesNotExist:
+            return Response('user is not logged')
+    def patch(self,request):
+        user = request.user
+        notificationId = request.GET.get('notificationId')
+        notification=Notifications.objects.get(id=notificationId)
+        is_readed_true = request.data.get('is_readed')
+        notification.is_readed = is_readed_true
+        notification.save()
+        return Response('readed ')
+    def delete(self,request):
+        notificationId = request.GET.get('notificationId')
+        Notifications.objects.get(id=notificationId).delete()
+        return Response('deleted')
+
+class LogoutView(APIView):
+    permission_classes = [IsAuthenticated]  # Only logged-in users can log out
+
+    def post(self, request):
+        response = Response({"message": "Logged out successfully"})
+        
+        response.delete_cookie('access_token')  
+        response.delete_cookie('refresh_token')
+        return response

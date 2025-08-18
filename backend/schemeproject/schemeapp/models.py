@@ -1,5 +1,5 @@
 from django.db import models
-
+from django.core.mail import EmailMessage
 # models.py
 
 from django.contrib.auth.models import AbstractUser
@@ -49,8 +49,8 @@ class Scheme(models.Model):
     # Eligibility Criteria
     min_age = models.PositiveIntegerField(null=True, blank=True)
     max_age = models.PositiveIntegerField(null=True, blank=True)
-    eligible_castes = models.CharField(max_length=255, blank=True, choices=[('Any','Any'),('SC,ST','SCST'),('OBC','OBC'),('General','General'),('EWS','EWS')] ,default='Any')
-    income_limit = models.FloatField(null=True, blank=True, help_text="Annual income upper limit in INR")
+    eligible_castes = models.CharField(max_length=255, blank=True, choices=[('Any','Any'),('SC,ST','SC,ST'),('OBC','OBC'),('General','General'),('EWS','EWS')] ,default='Any')
+    income_limit = models.PositiveBigIntegerField(null=True, blank=True, help_text="Annual income upper limit in INR")
     gender = models.CharField(max_length=10, choices=[('Male', 'Male'), ('Female', 'Female'), ('Any', 'Any')], default='Any')
     EDUCATION_CHOICES = [
         ('any', 'Any'),
@@ -116,9 +116,9 @@ class Scheme(models.Model):
 class EligibilityQuestion(models.Model):
     scheme = models.ForeignKey(Scheme, on_delete=models.CASCADE, related_name="questions")
     question_text = models.TextField()
-    expected_answer = models.CharField(max_length=20)  # e.g. "yes", "no"
+    expected_answer = models.CharField(max_length=20,choices=[('Yes','Yes'),('No','No')])  # e.g. "yes", "no"
     field_name = models.CharField(max_length=50)  # optional, for matching answers
-    type = models.CharField(max_length=20, choices=[("boolean", "Yes/No"), ("text", "Text"), ("number", "Number")])
+    type = models.CharField(max_length=20, choices=[("boolean", "Yes/No")])
     
     def __str__(self):
         return f"{self.scheme.title} - {self.question_text}"
@@ -155,19 +155,102 @@ class Application(models.Model):
         ('Rejected', 'Rejected'),
     ]
     status = models.CharField(max_length=20, choices=STATUS_CHOICES, default='Pending')
+    # def save(self, *args, **kwargs):
+    #     if self.uploaded_documents.exists():
+    #         if all(doc.is_approved for doc in self.uploaded_documents.all()):
+    #             self.status = 'Approved'
+    #         elif any(doc.is_rejected for doc in self.uploaded_documents.all()):
+    #             self.status = 'Rejected'
+    #         elif any(doc.is_approved or doc.is_rejected for doc in self.uploaded_documents.all()):
+    #             self.status = 'Under Review'
+    #         else:
+    #             self.status = 'Pending'
+    #     else:
+    #         self.status = 'Pending'
+    #     super().save(*args, **kwargs)
     def save(self, *args, **kwargs):
-        if self.uploaded_documents.exists():
-            if all(doc.is_approved for doc in self.uploaded_documents.all()):
-                self.status = 'Approved'
-            elif any(doc.is_rejected for doc in self.uploaded_documents.all()):
-                self.status = 'Rejected'
-            elif any(doc.is_approved or doc.is_rejected for doc in self.uploaded_documents.all()):
-                self.status = 'Under Review'
+    # Store the old status before changes
+        old_status = None
+        if self.pk:  # Object exists already
+            old_status = type(self).objects.get(pk=self.pk).status
+
+        # --- STATUS UPDATE LOGIC ---
+            if self.uploaded_documents.exists():
+                if all(doc.is_approved for doc in self.uploaded_documents.all()):
+                    self.status = 'Approved'
+                elif any(doc.is_rejected for doc in self.uploaded_documents.all()):
+                    self.status = 'Rejected'
+                elif any(doc.is_approved or doc.is_rejected for doc in self.uploaded_documents.all()):
+                    self.status = 'Under Review'
+                else:
+                    self.status = 'Pending'
             else:
                 self.status = 'Pending'
         else:
             self.status = 'Pending'
+
+        # Save first so status is committed before sending notifications
         super().save(*args, **kwargs)
+
+        # --- NOTIFICATION LOGIC ---
+        if self.pk and old_status != self.status:
+            if self.status == 'Pending':
+                email = self.user.email
+                email_message = EmailMessage(
+                    subject='Application Status',
+                    body=f'Your application for {self.scheme.title} is pending.Wait for minimum 2 days to verify our team .',
+                    from_email='giveandtakestartup@gmail.com',
+                    to=[email],
+            
+                )
+                email_message.send()
+                Notifications.objects.create(
+                    user=self.user,
+                    message=f"Your application for {self.scheme.title} is pending "
+                )
+            elif self.status == 'Under Review' and any(doc.is_approved or doc.is_rejected for doc in self.uploaded_documents.all()):
+                email = self.user.email
+                email_message = EmailMessage(
+                    subject='Application Status',
+                    body=f'Your application for {self.scheme.title} is under review .',
+                    from_email='giveandtakestartup@gmail.com',
+                    to=[email],
+            
+                )
+                email_message.send()
+                Notifications.objects.create(
+                    user=self.user,
+                    message=f"Your application for {self.scheme.title} is under review."
+                )
+            elif self.status == 'Approved':
+                email = self.user.email
+                email_message = EmailMessage(
+                    subject='Application Status',
+                    body=f'Congratulations! Your application for {self.scheme.title} is verified .You can download printout of application from schemeEase',
+                    from_email='giveandtakestartup@gmail.com',
+                    to=[email],
+            
+                )
+                email_message.send()
+                Notifications.objects.create(
+                    user=self.user,
+                    message=f"Congratulations! Your application for {self.scheme.title} is approved."
+                )
+            elif self.status == 'Rejected':
+                email = self.user.email
+                email_message = EmailMessage(
+                    subject='Application Status',
+                    body=f'Unfortunately, your application for {self.scheme.title} is rejected .Check out the website for the reasons .Please re-upload rejected documents for the successfull application .',
+                    from_email='giveandtakestartup@gmail.com',
+                    to=[email],
+            
+                )
+                email_message.send()
+                Notifications.objects.create(
+                    user=self.user,
+                    message=f"Unfortunately, your application for {self.scheme.title} is rejected."
+                )
+
     
     def __str__(self):
         return f"{self.user} - {self.scheme.title}"
@@ -196,4 +279,10 @@ class UploadedDocument(models.Model):
 class SuccessfulApply(models.Model):
     application = models.ForeignKey(Application,on_delete=models.CASCADE)
     printout = models.FileField(upload_to='successful/printouts/')
+    added_at = models.DateTimeField(auto_now_add=True)
+
+class Notifications(models.Model):
+    user = models.ForeignKey(UpdatedUser,on_delete=models.CASCADE)
+    message = models.TextField()
+    is_readed = models.BooleanField(default=False)
     added_at = models.DateTimeField(auto_now_add=True)

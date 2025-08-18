@@ -3,10 +3,10 @@ import axios from "axios";
 import { useNavigate } from "react-router-dom";
 import Footer from "../FooterComponent";
 import NavbarComponent from "../Navbar";
+import Alert from 'react-bootstrap/Alert';
 
 const Application = () => {
   const [applications, setApplications] = useState([]);
-  const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const navigate = useNavigate();
 
@@ -19,9 +19,7 @@ const Application = () => {
         setApplications(res.data);
       } catch (err) {
         setError("Failed to load applications.",err);
-      } finally {
-        setLoading(false);
-      }
+      } 
     };
 
     fetchApplications();
@@ -31,9 +29,20 @@ const Application = () => {
     navigate(`/result-apply/${id}`);
   };
 
-  if (loading) return <p>Loading applications...</p>;
   if (error) return <p>{error}</p>;
-  if (applications.length === 0) return <p>No applications submitted yet.</p>;
+  if (applications.length === 0){
+    return (
+      <>
+      <NavbarComponent/>
+  <Alert variant="info" className="text-center shadow-sm">
+    <strong>ℹ No applications submitted yet.</strong>  
+    <div style={{ fontSize: '0.9rem', marginTop: '4px' }}>
+      When you submit applications, they will appear here.
+    </div>
+  </Alert>
+  </>
+  
+    )}
 
   return (
     <>
@@ -57,7 +66,14 @@ const Application = () => {
               <td>{index + 1}</td>
               <td>{app.title || "—"}</td>
               <td>{app.department || "—"}</td>
-              <td>{app.status}</td>
+<td style={{
+  color: app.status === "Approved" ? "green" :
+         app.status === "Rejected" ? "red" :
+         app.status === "Pending" ? "orange" : "black",
+  fontWeight: "bold"
+}}>
+  {app.status}
+</td>
               <td>{new Date(app.applied_at).toLocaleDateString()}</td>
               <td>
                 <button

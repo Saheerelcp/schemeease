@@ -1,0 +1,106 @@
+✅ Project Title:
+Government Scheme Eligibility & Benefit Tracking Wallet
+
+📘 Abstract:
+In India, thousands of crores are allocated for public welfare schemes every year, yet a significant portion of the population remains unaware of the benefits they are entitled to. This digital platform aims to solve this real-world problem by helping citizens—especially rural and economically weaker sections—determine their eligibility for various central and state government schemes based on personal and socio-economic details.
+
+The system offers a dynamic eligibility checker, personalized benefit tracking dashboard, document management vault, and tools for social workers to manage scheme applications for multiple households. Unlike complex ML-based platforms, this project uses deterministic rule-based logic stored in configurable JSON tables, ensuring full transparency and control.
+
+Built using Django (Python backend) and React.js (frontend), this platform is designed to be extendable, region-aware, and secure, targeting a pressing civic need with practical full-stack capabilities.
+
+🛠️ Core Functionalities:
+👤 User Module (Citizen):
+User Registration & Login
+
+Basic details: Name, Age, Gender, Email, Phone, Password.
+
+Profile Completion Wizard
+
+Collect key info: Age, Gender, Caste, Religion, Annual Income, Occupation, Education, Disability, Landholding, etc.
+
+Scheme Eligibility Checker
+
+Rule-based engine shows eligible central/state schemes.
+
+Region-aware filtering (State & District-based).
+
+Personal Scheme Dashboard
+
+List of all eligible schemes with:
+
+Application Status: Not Applied, In Progress, Pending Docs, Approved, Funds Received
+
+Link to scheme's official application page (if external)
+
+Document Vault
+
+Upload & manage scanned documents (Aadhaar, Ration Card, Income Cert, etc.).
+
+Mark as verified or pending verification.
+
+Scheme Application Tracker
+
+Add/track dates, reminders, and notes per scheme.
+
+🧑‍🤝‍🧑 Social Worker Module (Optional Role):
+Multi-Family Manager Dashboard
+
+Create and manage multiple households.
+
+Apply on Behalf of Families
+
+Fill profiles, check eligibility, and manage documents per family.
+
+Progress Tracking
+
+Track benefit status across families.
+
+Notifications & Reminders
+
+Alerts for missing documents, expiring benefits, and scheme renewals.
+
+🧑‍💼 Admin Module (Government or NGO Staff):
+Scheme Rule Management
+
+Add/Edit/Delete scheme rules using JSON (logic tables).
+
+Define eligibility criteria based on user fields (age, income, caste, etc.).
+
+Document Verification Panel
+
+View uploaded documents and approve/reject them.
+
+Scheme Management
+
+Add/remove schemes with metadata: deadline, link, benefits, documents required.
+
+Analytics Dashboard
+
+View total users, top schemes, most missing documents, region-wise adoption.
+
+🔐 Security & Access Control:
+Role-based access (Citizen, Social Worker, Admin).
+
+No user can see another's data (except social workers managing delegated families).
+
+Document uploads with validation and encryption.
+
+Email OTP or 2FA optional for login and sensitive actions.
+
+⚙️ Optional Integrations (if allowed):
+SMS/Email Notification APIs (e.g., Twilio, EmailJS).
+
+Government portal APIs (for real-time application tracking, if public).
+
+Google Drive for backup of user documents.
+
+🌐 Tech Stack:
+Frontend: React.js, TailwindCSS or Material UI
+
+Backend: Django + Django REST Framework
+
+Database: PostgreSQL or MongoDB
+
+File Storage: Local or Cloudinary/AWS S3 for document vault
+
+Optional: Firebase or EmailJS for notifications

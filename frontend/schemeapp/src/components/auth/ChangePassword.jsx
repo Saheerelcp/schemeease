@@ -10,13 +10,13 @@ const VerifyOtpPage = () => {
   const [email, setEmail] = useState('');
   const [error, setError] = useState('');
   const [resendAvailable, setResendAvailable] = useState(false);
-  const [timer, setTimer] = useState(300); // 5 minutes in seconds
+  // const [timer, setTimer] = useState(300); // 5 minutes in seconds
   const inputRefs = useRef([]);
   const navigate = useNavigate();
 
   useEffect(() => {
     const storedEmail = localStorage.getItem('login_email');
-    const startTime = localStorage.getItem('otp_start_time');
+    // const startTime = localStorage.getItem('otp_start_time');
 
     if (storedEmail) {
       setEmail(storedEmail);
@@ -24,28 +24,28 @@ const VerifyOtpPage = () => {
       setError('Email not found. Please go back and enter your email again.');
     }
 
-    if (startTime) {
-      const elapsed = Math.floor((Date.now() - parseInt(startTime)) / 1000);
-      setTimer(Math.max(300 - elapsed, 0));
-    } else {
-      const now = Date.now();
-      localStorage.setItem('otp_start_time', now.toString());
-      setTimer(300);
-    }
+    // if (startTime) {
+    //   const elapsed = Math.floor((Date.now() - parseInt(startTime)) / 1000);
+    //   setTimer(Math.max(300 - elapsed, 0));
+    // } else {
+    //   const now = Date.now();
+    //   localStorage.setItem('otp_start_time', now.toString());
+    //   setTimer(300);
+    // }
   }, []);
 
   // Countdown Timer
-  useEffect(() => {
-    if (timer <= 0) {
-      setResendAvailable(true);
-      return;
-    }
-    const interval = setInterval(() => {
-      setTimer((prev) => prev - 1);
-    }, 1000);
+  // useEffect(() => {
+  //   if (timer <= 0) {
+  //     setResendAvailable(true);
+  //     return;
+  //   }
+  //   const interval = setInterval(() => {
+  //     setTimer((prev) => prev - 1);
+  //   }, 1000);
 
-    return () => clearInterval(interval);
-  }, [timer]);
+  //   return () => clearInterval(interval);
+  // }, [timer]);
 
   const handleChange = (element, index) => {
     const val = element.value.replace(/\D/, '');
@@ -101,7 +101,7 @@ const VerifyOtpPage = () => {
       toast.success(response.data.message || 'New OTP sent to your email!');
       const now = Date.now();
       localStorage.setItem('otp_start_time', now.toString());
-      setTimer(300);
+      // setTimer(300);
       setResendAvailable(false);
       setOtp(new Array(6).fill(''));
       inputRefs.current[0]?.focus();
@@ -110,11 +110,11 @@ const VerifyOtpPage = () => {
     }
   };
 
-  const formatTime = (seconds) => {
-    const m = Math.floor(seconds / 60).toString().padStart(2, '0');
-    const s = (seconds % 60).toString().padStart(2, '0');
-    return `${m}:${s}`;
-  };
+  // const formatTime = (seconds) => {
+  //   const m = Math.floor(seconds / 60).toString().padStart(2, '0');
+  //   const s = (seconds % 60).toString().padStart(2, '0');
+  //   return `${m}:${s}`;
+  // };
 
   return (
     <div className="container mt-5">
@@ -153,7 +153,7 @@ const VerifyOtpPage = () => {
               </button>
             ) : (
               <p className="text-muted" style={{ fontSize: '14px' }}>
-                Resend available in: <strong>{formatTime(timer)}</strong>
+                {/* Resend available in: <strong>{formatTime(timer)}</strong> */}
               </p>
             )}
           </div>

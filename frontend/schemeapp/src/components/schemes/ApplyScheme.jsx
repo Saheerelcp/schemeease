@@ -1,19 +1,21 @@
 import React, { useEffect, useState } from 'react';
 import axios from 'axios';
-import {  useParams } from 'react-router-dom';
-import { Button, Form, Container, Row, Col, Card, Spinner } from 'react-bootstrap';
+import {   useNavigate, useParams } from 'react-router-dom';
+import { Button, Form, Container, Row, Col, Card, Spinner,Alert } from 'react-bootstrap';
 import Footer from '../FooterComponent';
 import NavbarComponent from '../Navbar';
 import { ToastContainer, toast } from 'react-toastify';
 import 'react-toastify/dist/ReactToastify.css';
 
 const ApplyScheme = () => {
+  const navigate = useNavigate()
   const { schemeId } = useParams();
   const [scheme, setScheme] = useState({});
   const [uploads, setUploads] = useState({});
   const [loading, setLoading] = useState(true);
   const [submitted, setSubmitted] = useState(false);
-
+  const [repeat,setRepeat] = useState(false);
+  // const navigate = useNavigate()
   useEffect(() => {
     const fetchScheme = async () => {
       try {
@@ -66,7 +68,17 @@ const ApplyScheme = () => {
       );
 
       setSubmitted(true);
-      toast.success(res.data);
+
+      toast.success(res.data, { position: 'top-right', autoClose: 2000 });
+
+      if(res.data.repeat){
+        setRepeat(true)
+      }
+      else if(res.data){
+        setTimeout(() => {
+          navigate('/application-view')
+        }, 3000);
+      }
     } catch (error) {
       console.error("Error submitting application", error);
       toast.error("Submission failed");
@@ -78,11 +90,22 @@ const ApplyScheme = () => {
 
     return scheme.required_documents.some((doc) => !uploads[doc.id]);
   };
-
+  if (loading) {
+    return (
+      <>
+        <NavbarComponent />
+        <Container className="mt-5 text-center">
+          <Spinner animation="border" variant="primary" />
+          <p>Loading application status...</p>
+        </Container>
+      </>
+    );
+  }
   return (
     <>
       <NavbarComponent />
       <Container className="mt-5 mb-5">
+        {repeat && <Alert>You are already applied for this scheme .</Alert>}
         <Card
           className="shadow p-4"
           style={{
@@ -132,7 +155,7 @@ const ApplyScheme = () => {
         </Card>
       </Container>
       <Footer />
-      <ToastContainer position="top-center" />
+      <ToastContainer  />
     </>
   );
 };

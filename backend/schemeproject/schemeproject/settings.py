@@ -53,7 +53,8 @@ INSTALLED_APPS = [
     'django.contrib.messages',
     'django.contrib.staticfiles',
     'corsheaders',
-    'schemeapp'
+    'background_task',
+    'schemeapp',
 ]
 
 SITE_ID = 1
@@ -220,5 +221,6 @@ EMAIL_USE_SSL = False
 EMAIL_HOST_USER = 'giveandtakestartup@gmail.com'
 EMAIL_HOST_PASSWORD = 'rkgruheyhgryhtcv'  # ⚠️ NOT your Gmail login password!
 # DEFAULT_FROM_EMAIL = 'giveandtakestartup@gmail.com'
+
 
 

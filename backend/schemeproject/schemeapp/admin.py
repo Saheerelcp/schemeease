@@ -1,9 +1,9 @@
 from django.utils import timezone
 from django.contrib import admin
-from django.utils.html import format_html
+import traceback
 from django.forms.models import BaseInlineFormSet
 from django.core.exceptions import ValidationError
-from schemeapp.models import Application, Districts, EligibilityQuestion,  RequiredDocuments, Scheme, States, SuccessfulApply, UploadedDocument
+from schemeapp.models import Application, Districts, EligibilityQuestion, Notifications,  RequiredDocuments, Scheme, States, SuccessfulApply, UploadedDocument
 
 # Register your models here.
 class ActiveNowFilter(admin.SimpleListFilter):
@@ -76,14 +76,14 @@ class SuccessPrintoutInline(admin.TabularInline):
     extra =1
 @admin.register(Application)
 class ApplicationAdmin(admin.ModelAdmin):
-    list_display = ('id','user', 'status', 'all_documents_approved')
+    list_display = ('id', 'user', 'status', 'all_documents_approved')
     list_filter = ('status',)
-    readonly_fields = ['user','scheme']
+    readonly_fields = ['user', 'scheme']
     
+
     def all_documents_approved(self, obj):
         documents = obj.uploaded_documents.all()
         return documents.exists() and all(doc.is_approved for doc in documents)
-
 
     all_documents_approved.boolean = True
     all_documents_approved.short_description = "Documents Approved"
@@ -91,15 +91,9 @@ class ApplicationAdmin(admin.ModelAdmin):
     def get_inline_instances(self, request, obj=None):
         if obj is None:
             return []
-
         inlines = [DocumentReviewInline(self.model, self.admin_site)]
-
-    # Show SuccessPrintoutInline only if all documents are approved
         if obj.uploaded_documents.exists() and all(doc.is_approved for doc in obj.uploaded_documents.all()):
             inlines.append(SuccessPrintoutInline(self.model, self.admin_site))
-
         return inlines
-
-
 
 

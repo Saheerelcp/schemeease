@@ -3,20 +3,21 @@ import Container from 'react-bootstrap/Container';
 import Nav from 'react-bootstrap/Nav';
 import Navbar from 'react-bootstrap/Navbar';
 import logo from '../images/logo.webp';
-import Form from 'react-bootstrap/Form';
 import Button from 'react-bootstrap/Button';
-import { Link } from 'react-router-dom';
+import { Link, useNavigate } from 'react-router-dom';
 import OverlayTrigger from 'react-bootstrap/OverlayTrigger';
 import Tooltip from 'react-bootstrap/Tooltip';
-
-
-import { FaUserCircle, FaBell, FaSearch } from 'react-icons/fa';
+import { BoxArrowRight } from "react-bootstrap-icons";
+import 'react-toastify/dist/ReactToastify.css';
+import { FaUserCircle } from 'react-icons/fa';
 import '../styles/navbar.css'; // Custom CSS for hover
 import axios from 'axios';
 import { useState } from 'react';
+import Notifications from './Notifications';
 
 function NavbarComponent() {
   const [isComplete,setComplete] = useState(true)
+  const navigate = useNavigate()
   useEffect( () => {
     axios.get('http://localhost:8000/api/total-user/',
       {withCredentials:true},
@@ -30,7 +31,18 @@ function NavbarComponent() {
       console.log('something went wrong',err)
     })
   },[])
+
+  const handleLogout = async () => {
+    try {
+        await axios.post("http://localhost:8000/api/logout/", {}, { withCredentials: true });
+        navigate('/')
+    } catch (error) {
+        console.error("Logout failed", error);
+    }
+};
   return (
+    <>
+    
     <Navbar bg="primary" data-bs-theme="dark" sticky="top">
       <Container fluid>
         <div className="d-flex align-items-center">
@@ -48,14 +60,14 @@ function NavbarComponent() {
         </div>
 
         <Nav className="mx-auto gap-4">
-          <Nav.Link href="#home" className="nav-hover">Home</Nav.Link>
-          {isComplete &&<Nav.Link  href="recommended-view" className="nav-hover">Recommended</Nav.Link>}
-          <Nav.Link href="bookmark-view" className="nav-hover">Bookmarked</Nav.Link>
+          <Nav.Link href="/dashboard" className="nav-hover">Home</Nav.Link>
+          {isComplete &&<Nav.Link  href="/recommended-view" className="nav-hover">Recommended</Nav.Link>}
+          <Nav.Link href="/bookmark-view" className="nav-hover">Bookmarked</Nav.Link>
           <Nav.Link href="/application-view" className="nav-hover">Applied</Nav.Link>
         </Nav>
 
         <div className="d-flex align-items-center gap-3 me-3">
-          <Form className="d-flex">
+          {/* <Form className="d-flex">
             <Form.Control
               type="text"
               placeholder="Search"
@@ -64,9 +76,11 @@ function NavbarComponent() {
             <Button variant="light" type="submit">
               <FaSearch size={20} />
             </Button>
-          </Form>
-
+          </Form> */}
+          {/* <Link to={'/notifications'}>
           <FaBell className="text-white" size={24} style={{ cursor: 'pointer' }} />
+          </Link> */}
+          <Notifications/>
          <div style={{ position: 'relative', display: 'inline-block' }}>
   <OverlayTrigger
     placement="bottom"
@@ -74,7 +88,7 @@ function NavbarComponent() {
       <Tooltip id="button-tooltip-2">
         {isComplete
           ? 'User profile'
-          : 'Please complete user profile to check eligible schemes'}
+          : 'Please complete user profile to check recommended schemes'}
       </Tooltip>
     }
   >
@@ -98,11 +112,26 @@ function NavbarComponent() {
   </OverlayTrigger>
 </div>
 
-
-          
-        </div>
+<OverlayTrigger
+  placement="bottom"
+    overlay={
+      <Tooltip id="button-tooltip-2">
+        Log-out
+      </Tooltip>
+    }
+    >
+<Button
+      variant="danger"
+      className="d-flex align-items-center gap-2 px-2 py-2 fw-semibold shadow-sm"
+      onClick={handleLogout}
+    >
+      <BoxArrowRight size={18} />
+    </Button>
+    </OverlayTrigger>
+            </div>
       </Container>
     </Navbar>
+    </>
   );
 }
 
